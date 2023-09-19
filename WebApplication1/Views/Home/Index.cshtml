@@ -1,0 +1,73 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<input type="hidden" id="filesCount" value="@ViewBag.filesCount" />
+<input type="hidden" id="resindex" value="@ViewBag.resindex" />
+
+<div style="padding:12px;">
+
+
+    <table id="butablo">
+        <tr>
+            <td>
+                <img class="anaresim" src='@Url.Action("ResimYap", new { resindex = ViewBag.resindex })' id="anaresimID" />
+                <div class="gezen" id="gezenDiv">&nbsp;</div>
+            </td>
+            <td style="vertical-align:top">
+                <img src='@Url.Action("ResimCrop")' id="anaresimID" height="288" />
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <button class="naviBtn" id="btnNavGeri"><< Geri</button>
+                <button class="naviBtn" id="btnNavIleri">İleri >></button>
+                &nbsp;&nbsp;||&nbsp;&nbsp;
+                <button class="naviBtn" id="btnSlideBack"><< Kaydır</button>
+                <button class="naviBtn" id="btnSlideForw">Kaydır >></button>
+                &nbsp;&nbsp;||&nbsp;&nbsp;
+                <button class="secBtn" id="secim0" style="background-color:darkslategrey">Boş</button>
+                <button class="secBtn" id="secim1" style="background-color:lawngreen">Kültür</button>
+                <button class="secBtn" id="secim2" style="background-color:orangered">YabancıOt</button>
+                <button class="secBtn" id="secim3" style="background-color:blue">Karışık</button>
+            </td>
+        </tr>
+    </table>
+</div>
+
+
+
+<script>
+
+    let filesCount = Number($("#filesCount").val());
+    let resindex = Number($("#resindex").val());
+
+    $(document).ready(function () {
+        let anapos = $("#butablo").scrollTop();
+        $("#gezenDiv").css({ top: anapos + 12, position: 'absolute' });
+
+    });
+
+    $("#btnNavGeri").click(function () {
+        resindex -= 1;
+        if (resindex < 0)
+            resindex = 0;
+        window.location = "/Home/Index?resindex=" + resindex;
+
+    });
+    $("#btnNavIleri").click(function () {
+        resindex += 1;
+        if (resindex > filesCount - 1)
+            resindex = filesCount - 1;
+        window.location = "/Home/Index?resindex=" + resindex;
+    });
+
+    $("#btnSlideBack").click(function () {
+
+    });
+
+    $("#btnSlideForw").click(function () {
+
+    });
+
+</script>
