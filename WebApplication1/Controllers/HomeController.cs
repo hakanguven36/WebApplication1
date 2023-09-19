@@ -21,11 +21,13 @@ namespace WebApplication1.Controllers
     public class HomeController : Controller
     {
         List<string> files;
+        private readonly IWebHostEnvironment hostEnvironment;
 
         public HomeController(IWebHostEnvironment hostEnvironment)
         {
             string HamDir = hostEnvironment.WebRootPath + @"/dosyalar/Ham";
             files = Directory.GetFiles(HamDir).ToList();
+            this.hostEnvironment = hostEnvironment;
         }
 
         public IActionResult Index(int resindex)
@@ -34,29 +36,21 @@ namespace WebApplication1.Controllers
             ViewBag.filesCount = files.Count();
             ViewBag.resindex = resindex;
 
+            FileStream output = new FileStream(hostEnvironment.WebRootPath + @"/dosyalar/Temp/buyuk.jpg", FileMode.Create);
+            String path = Path.Combine(files[resindex]);
+            Image img = Image.FromFile(path);
+            Image newimg = ResizeImage(img, new Size(1280, 720));
+            newimg.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
+            output.Close();
+
             return View();
+
+            //finally
+            //{
+            //    HttpContext.Response.OnCompleted(async () => await Task.Run(() => output.Dispose()));
+            //}
         }
 
-        public IActionResult ResimYap(int resindex)
-        {
-            MemoryStream output = new MemoryStream();
-            try
-            {                
-                String path = Path.Combine(files[resindex]);
-                Image img = Image.FromFile(path);
-                Image newimg = ResizeImage(img, new Size(1280, 720));
-                newimg.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
-                return File(output.GetBuffer(), "image/jpeg");
-            }
-            catch (Exception e)
-            {
-                return Json("Hata: " + e.Message);
-            }
-            finally
-            {
-                HttpContext.Response.OnCompleted(async () => await Task.Run(() => output.Dispose()));
-            }
-        }
 
         public IActionResult ResimCrop(int resindex, int cropindex)
         {

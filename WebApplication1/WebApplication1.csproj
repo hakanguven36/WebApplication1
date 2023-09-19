@@ -21,12 +21,4 @@
     <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="wwwroot\dosyalar\Bos\" />
-    <Folder Include="wwwroot\dosyalar\Kultur\" />
-    <Folder Include="wwwroot\dosyalar\Karisik\" />
-    <Folder Include="wwwroot\dosyalar\Temp\" />
-    <Folder Include="wwwroot\dosyalar\Yabanci\" />
-  </ItemGroup>
-
 </Project>
