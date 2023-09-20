@@ -5,68 +5,75 @@
 <input type="hidden" id="filesCount" value="@ViewBag.filesCount" />
 <input type="hidden" id="resindex" value="@ViewBag.resindex" />
 
-<div style="padding:12px;">
 
 
-    <table id="butablo">
-        <tr>
-            <td>
-                <img class="anaresim" src='~/dosyalar/Temp/buyuk.jpg' id="anaresimID" />
-                <div class="gezen" id="gezenDiv">&nbsp;</div>
-            </td>
-            <td style="vertical-align:top">
-                <canvas id="canvas"></canvas>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <button class="naviBtn" id="btnNavGeri"><< Geri</button>
-                <button class="naviBtn" id="btnNavIleri">İleri >></button>
-                &nbsp;&nbsp;||&nbsp;&nbsp;
-                <button class="naviBtn" id="btnSlideBack"><< Kaydır</button>
-                <button class="naviBtn" id="btnSlideForw">Kaydır >></button>
-                &nbsp;&nbsp;||&nbsp;&nbsp;
-                <button class="secBtn" id="secim0" style="background-color:darkslategrey">Boş</button>
-                <button class="secBtn" id="secim1" style="background-color:lawngreen">Kültür</button>
-                <button class="secBtn" id="secim2" style="background-color:orangered">YabancıOt</button>
-                <button class="secBtn" id="secim3" style="background-color:blue">Karışık</button>
-            </td>
-        </tr>
-    </table>
+<table class="table table-secondary">
+    <tr>
+        <td>
+            <img class="anaresim" src='~/dosyalar/Temp/buyuk.jpg' id="anaresimID" />
+        </td>
+        <td>
+            <table>
+                <tr>
+                    <td style="vertical-align:top">
+                        <canvas id="canvas"></canvas>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                            <button class="naviBtn" id="btnNavGeri"><< Geri</button>
+                            <button class="naviBtn" id="btnNavIleri">İleri >></button>
+                            &nbsp;&nbsp;||&nbsp;&nbsp;
+                            <button class="naviBtn" id="btnSlideBack" onclick="CursorDecrease()"><< Kaydır</button>
+                            <button class="naviBtn" id="btnSlideForw" onclick="CursorIncrease()">Kaydır >></button>
+                            &nbsp;&nbsp;||&nbsp;&nbsp;
+                            <button class="secBtn" onclick="SecimYap(0)" style="background-color:darkslategrey">Boş</button>
+                            <button class="secBtn" onclick="SecimYap(1)" style="background-color:lawngreen">Kültür</button>
+                            <button class="secBtn" onclick="SecimYap(2)" style="background-color:orangered">YabancıOt</button>
+                            <button class="secBtn" onclick="SecimYap(3)" style="background-color:blue">Karışık</button>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+<canvas id="ucancanvas" ></canvas>
+<div id="mesela">
+
 </div>
-
-
-
-
 <script>
+    var imageWidth = 1280;
+    var imageHeight = 720;
+    var gridHorizontalCount = 5;
+    var gridVerticalCount = 5;
+    var gridWidth = 1280 / gridHorizontalCount;
+    var gridHeight = 720 / gridVerticalCount;
+    var gridCount = gridHorizontalCount * gridVerticalCount;
 
-    let filesCount = Number($("#filesCount").val());
-    let resindex = Number($("#resindex").val());
+    var filesCount = Number($("#filesCount").val());
+    var resindex = Number($("#resindex").val());
 
+    var cursor = { x: 0, y: 0 };
+    var cursorindex = 0;
 
-    function cropImage(newX, newY, newWidth, newHeight) {
+    // init Canvas
+    const img = document.getElementById("anaresimID");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = (gridWidth) * 3;
+    canvas.height = (gridHeight) * 3;
 
-        const canvas = document.getElementById("canvas");
-        const ctx = canvas.getContext("2d");
-
-        canvas.width = newWidth*2;
-        canvas.height = newHeight*2;
-
-        
-        const img =  document.getElementById("anaresimID");
-
-        
-
-        //draw the image
-        ctx.drawImage(img, newX, newY, newWidth, newHeight, 0, 0, newWidth*2, newHeight*2);
-    }
+    // init  ucanCanvas
+    const ucanCanvas = document.getElementById("ucancanvas");
+    const ctxucan = ucanCanvas.getContext("2d");
+    ucanCanvas.width = gridWidth;
+    ucanCanvas.height = gridHeight;
 
 
     $(document).ready(function () {
-        let anapos = $("#butablo").scrollTop();
-        $("#gezenDiv").css({ top: anapos + 12, position: 'absolute' });
-        cropImage(0, 0, 256, 144);
-
+        FillCanvas();
+        ArrangeUcanCanvas();
     });
 
     $("#btnNavGeri").click(function () {
@@ -83,12 +90,72 @@
         window.location = "/Home/Index?resindex=" + resindex;
     });
 
-    $("#btnSlideBack").click(function () {
+
+
+    function CursorIncrease() {
+        cursorindex++;
+        if (cursorindex > gridCount - 1)
+            cursorindex = gridCount - 1;
+
+        ArrangeCursorPosition();
+    }
+    function CursorDecrease() {
+        cursorindex--;
+        if (cursorindex < 0)
+            cursorindex = 0;
+        ArrangeCursorPosition();
+    }
+    function ArrangeCursorPosition() {
+        var cursorRow = Math.floor(cursorindex / gridHorizontalCount);
+        var cursorCol = Math.floor(cursorindex % gridVerticalCount);
+
+        cursor.x = cursorCol * gridWidth;
+        cursor.y = cursorRow * gridHeight;
+        FillCanvas();
+        ArrangeUcanCanvas();
+    }
+
+    function FillCanvas() {
+        ctx.drawImage(img, cursor.x, cursor.y, gridWidth, gridHeight, 0, 0, gridWidth * 3, gridHeight * 3);
+    }
+
+
+    function ArrangeUcanCanvas() {
+        
+        ctxucan.drawImage(img, cursor.x, cursor.y, gridWidth, gridHeight, 0, 0, gridWidth, gridHeight);
+
+        $("#anaresimID").css({ "opacity": "0.75" });
+
+        $("#ucancanvas").css({ "z-index": 4, "position": "absolute", "top": cursor.y + 10, "left": cursor.x + 9, "border": "solid red 3px" });
+    }
+
+    function SecimYap(secim) {
+        // TODO: Ajax => (secim, cursor.x, cursor.y, gridWidth, gridHeight); 
+        CursorIncrease();
+    }
+
+    $("#anaresimID").click(function (e) { //Relative ( to its parent) mouse position 
+        var posX = $(this).position().left,
+            posY = $(this).position().top;
+        var clickPoint = {
+            x: (e.pageX - posX),
+            y: (e.pageY - posY)
+        };
+
+        var rowTH = Math.floor(clickPoint.x / gridWidth);
+        var colTH = Math.floor(clickPoint.y / gridHeight);
+
+
+
+        cursorindex = colTH * gridHorizontalCount + rowTH;
+        ArrangeCursorPosition();
 
     });
 
-    $("#btnSlideForw").click(function () {
-
-    });
+    $(document).keyup(function (e) {
+        if (e.key == "0" || e.key == "1" || e.key == "2" || e.key == "3") {
+            SecimYap(Number(e.key));
+        }
+    })
 
 </script>

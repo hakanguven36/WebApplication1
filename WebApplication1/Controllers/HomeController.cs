@@ -4,51 +4,70 @@ using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using WebApplication1.Models;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.IO;
-using Microsoft.AspNetCore.Hosting;
+
 
 namespace WebApplication1.Controllers
 {
     public class HomeController : Controller
     {
-        List<string> files;
-        private readonly IWebHostEnvironment hostEnvironment;
+        private readonly IWebHostEnvironment hostEnvironment;        
+        private List<string> files;
+        private int resindex = 0;
+        private string root_ham, root_temp, root_bos, root_kultur, root_yabanci, root_karisik;
 
         public HomeController(IWebHostEnvironment hostEnvironment)
         {
-            string HamDir = hostEnvironment.WebRootPath + @"/dosyalar/Ham";
-            files = Directory.GetFiles(HamDir).ToList();
             this.hostEnvironment = hostEnvironment;
+
+            root_ham = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Ham");
+            root_temp = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Temp");
+            root_bos = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Bos");
+            root_kultur = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Kultur");
+            root_yabanci = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Yabanci");
+            root_karisik = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Karisik");
+
+            files = Directory.GetFiles(root_ham).ToList();
         }
 
         public IActionResult Index(int resindex)
         {
+            if (!Directory.Exists(root_ham) || !Directory.Exists(root_temp) || !Directory.Exists(root_bos) || !Directory.Exists(root_kultur) || !Directory.Exists(root_yabanci) || !Directory.Exists(root_karisik))
+            {
+                return Json("Klasörlerden biri yada birkaçı eksik! wwwroot/dosyalar içinde Ham, Temp, Bos, Kultur, Yabanci, Karisik isimli klasörleri oluşturun ");
+            }
 
-            ViewBag.filesCount = files.Count();
+            if(files.Count == 0)
+            {
+                return Json("Belirtilen konumda görsel bulunamadı!");
+            }
+
+            if (resindex >= files.Count)
+            {
+                resindex = files.Count - 1;
+            }
+            else if( resindex < 0)
+            {
+                resindex = 0;
+            }
+
+            ViewBag.filesCount = files.Count;
+            this.resindex = resindex;
             ViewBag.resindex = resindex;
 
-            FileStream output = new FileStream(hostEnvironment.WebRootPath + @"/dosyalar/Temp/buyuk.jpg", FileMode.Create);
-            String path = Path.Combine(files[resindex]);
-            Image img = Image.FromFile(path);
-            Image newimg = ResizeImage(img, new Size(1280, 720));
-            newimg.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
-            output.Close();
-
+            using (FileStream output = new FileStream(Path.Combine(root_temp, "buyuk.jpg"), FileMode.Create))
+            {
+                Image img = Image.FromFile(files[resindex]);
+                Image newimg = ResizeImage(img, new Size(1280, 720));
+                newimg.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
+            }
+            
             return View();
-
-            //finally
-            //{
-            //    HttpContext.Response.OnCompleted(async () => await Task.Run(() => output.Dispose()));
-            //}
         }
 
 
