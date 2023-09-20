@@ -55,7 +55,7 @@ button.accept-policy {
 -------------------------------------------------- */
 
 
-.naviBtn{
+.naviBtn {
     background-color: gray;
     border-left: solid white 3px;
     border-top: solid white 3px;
@@ -72,8 +72,7 @@ button.accept-policy {
         cursor: pointer;
     }
 
-.secBtn{
-    
+.secBtn {
     border-left: solid white 3px;
     border-top: solid white 3px;
     border-right: solid darkgray 3px;
@@ -83,6 +82,7 @@ button.accept-policy {
     box-shadow: rgba(0,0,0,0.2) 4px 4px 8px;
     color: white;
 }
+
     .secBtn:hover {
         background-color: darkblue;
         cursor: pointer;

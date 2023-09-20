@@ -5,11 +5,17 @@
 <input type="hidden" id="filesCount" value="@ViewBag.filesCount" />
 <input type="hidden" id="resindex" value="@ViewBag.resindex" />
 
+<center>
+    <div style="width:99%">
+        <div style="border:solid 4px black; text-align:left">
+            <div id="tamamlanmaBar" style="background-color:green; min-height:1em; width:19%; text-align:right; padding-right:1em;color:white; transition:1s;">%19</div>
+        </div>
+    </div>
+</center>
 
-
-<table class="table table-secondary">
+<table class="table table-secondary" id="MainTable">
     <tr>
-        <td>
+        <td id="anaResimColumn">
             <img class="anaresim" src='~/dosyalar/Temp/buyuk.jpg' id="anaresimID" />
         </td>
         <td>
@@ -21,16 +27,21 @@
                 </tr>
                 <tr>
                     <td>
-                            <button class="naviBtn" id="btnNavGeri"><< Geri</button>
-                            <button class="naviBtn" id="btnNavIleri">İleri >></button>
-                            &nbsp;&nbsp;||&nbsp;&nbsp;
-                            <button class="naviBtn" id="btnSlideBack" onclick="CursorDecrease()"><< Kaydır</button>
-                            <button class="naviBtn" id="btnSlideForw" onclick="CursorIncrease()">Kaydır >></button>
-                            &nbsp;&nbsp;||&nbsp;&nbsp;
-                            <button class="secBtn" onclick="SecimYap(0)" style="background-color:darkslategrey">Boş</button>
-                            <button class="secBtn" onclick="SecimYap(1)" style="background-color:lawngreen">Kültür</button>
-                            <button class="secBtn" onclick="SecimYap(2)" style="background-color:orangered">YabancıOt</button>
-                            <button class="secBtn" onclick="SecimYap(3)" style="background-color:blue">Karışık</button>
+                        <span>@(ViewBag.resindex+1) / @ViewBag.filesCount</span>
+                        &nbsp;&nbsp;||&nbsp;&nbsp;
+                        <button class="btn btn-secondary" onclick="NavigateBackward()"><< Geri</button>
+                        <button class="btn btn-secondary" onclick="NavigateForward()">İleri >></button>
+                        &nbsp;&nbsp;||&nbsp;&nbsp;
+                        <button class="btn btn-sm btn-outline-danger" onclick="ResmiSil()"> resmi sil </button>
+                        <hr />
+                        <button class="btn secBtn" onclick="SecimYap(0)" style="background-color:darkslategrey">Toprak</button>
+                        <button class="btn secBtn" onclick="SecimYap(1)" style="background-color:darkgreen">Kültür</button>
+                        <button class="btn secBtn" onclick="SecimYap(2)" style="background-color:orangered">YabancıOt</button>
+                        <button class="btn secBtn" onclick="SecimYap(3)" style="background-color:blue">%50 Kültür+Yabancı</button>
+                        &nbsp;&nbsp;||&nbsp;&nbsp;
+                        <button class="btn secBtn" onclick="SecimYap(4)" style="background-color:black">Anlamsız</button>
+                        <hr />
+                        <button class="btn btn-lg btn-success" onclick="Completed()"> Tamamlandı </button>
                     </td>
                 </tr>
             </table>
@@ -38,11 +49,14 @@
     </tr>
 </table>
 
+
 <canvas id="ucancanvas" ></canvas>
 <div id="mesela">
 
 </div>
 <script>
+    var Turler = ["Toprak", "Kültür", "YabancıOt", "%50 Kültür+Yabancı", "Anlamsız"];
+    var secimler = [];
     var imageWidth = 1280;
     var imageHeight = 720;
     var gridHorizontalCount = 5;
@@ -54,8 +68,10 @@
     var filesCount = Number($("#filesCount").val());
     var resindex = Number($("#resindex").val());
 
-    var cursor = { x: 0, y: 0 };
+    var cursor = { x: 0, y: 0 , row:0, col:0};
     var cursorindex = 0;
+
+    var MenuHeight = 0;
 
     // init Canvas
     const img = document.getElementById("anaresimID");
@@ -72,45 +88,50 @@
 
 
     $(document).ready(function () {
+        MenuHeight = $("#MainTable").position().top;
         FillCanvas();
         ArrangeUcanCanvas();
+        MakeGridTable();
     });
 
-    $("#btnNavGeri").click(function () {
+    function NavigateBackward () {
         resindex -= 1;
-        if (resindex < 0)
+        if (resindex < 0) {
             resindex = 0;
+            return;
+        }
         window.location = "/Home/Index?resindex=" + resindex;
-
-    });
-    $("#btnNavIleri").click(function () {
+    }
+    function NavigateForward() {
         resindex += 1;
-        if (resindex > filesCount - 1)
+        if (resindex > filesCount - 1) {
             resindex = filesCount - 1;
+            return;
+        }
         window.location = "/Home/Index?resindex=" + resindex;
-    });
+    }
 
 
 
     function CursorIncrease() {
         cursorindex++;
         if (cursorindex > gridCount - 1)
-            cursorindex = gridCount - 1;
+            cursorindex = 0;
 
         ArrangeCursorPosition();
     }
     function CursorDecrease() {
         cursorindex--;
         if (cursorindex < 0)
-            cursorindex = 0;
+            cursorindex = gridCount - 1;
         ArrangeCursorPosition();
     }
     function ArrangeCursorPosition() {
-        var cursorRow = Math.floor(cursorindex / gridHorizontalCount);
-        var cursorCol = Math.floor(cursorindex % gridVerticalCount);
+        cursor.row = Math.floor(cursorindex / gridHorizontalCount);
+        cursor.col = Math.floor(cursorindex % gridVerticalCount);
 
-        cursor.x = cursorCol * gridWidth;
-        cursor.y = cursorRow * gridHeight;
+        cursor.x = cursor.col * gridWidth;
+        cursor.y = cursor.row * gridHeight;
         FillCanvas();
         ArrangeUcanCanvas();
     }
@@ -119,43 +140,74 @@
         ctx.drawImage(img, cursor.x, cursor.y, gridWidth, gridHeight, 0, 0, gridWidth * 3, gridHeight * 3);
     }
 
-
     function ArrangeUcanCanvas() {
         
         ctxucan.drawImage(img, cursor.x, cursor.y, gridWidth, gridHeight, 0, 0, gridWidth, gridHeight);
 
         $("#anaresimID").css({ "opacity": "0.75" });
 
-        $("#ucancanvas").css({ "z-index": 4, "position": "absolute", "top": cursor.y + 10, "left": cursor.x + 9, "border": "solid red 3px" });
+        $("#ucancanvas").css({ "z-index": 5, "position": "absolute", "top": cursor.y + 10 + MenuHeight, "left": cursor.x + 9, "border": "solid red 3px" });
     }
 
     function SecimYap(secim) {
-        // TODO: Ajax => (secim, cursor.x, cursor.y, gridWidth, gridHeight); 
+        var secilen = $("#gridTable tr:nth-child(" + Number(cursor.row + 1) + ") td:nth-child(" + Number(cursor.col +1 ) + ")");
+        secilen.css({ "color": "yellow" });
+        secilen.text(Turler[secim]);
+        secimler.push({ resindex: resindex, secim: secim, cursorX: cursor.x, cursorY: cursor.y, gridWidth:gridWidth, gridHeight:gridHeight });
         CursorIncrease();
     }
 
-    $("#anaresimID").click(function (e) { //Relative ( to its parent) mouse position 
-        var posX = $(this).position().left,
-            posY = $(this).position().top;
-        var clickPoint = {
-            x: (e.pageX - posX),
-            y: (e.pageY - posY)
-        };
-
-        var rowTH = Math.floor(clickPoint.x / gridWidth);
-        var colTH = Math.floor(clickPoint.y / gridHeight);
-
-
-
-        cursorindex = colTH * gridHorizontalCount + rowTH;
-        ArrangeCursorPosition();
-
-    });
+    
 
     $(document).keyup(function (e) {
         if (e.key == "0" || e.key == "1" || e.key == "2" || e.key == "3") {
             SecimYap(Number(e.key));
         }
-    })
+    });
 
+    function MakeGridTable() {
+        var table = $("<table>");
+        table.attr("id", "gridTable");
+        table.addClass("table-bordered");
+        // table.height(img.height + 2);   // +2 => table border'dan dolayı
+        // table.width(img.width + 2);     // +2 => table border'dan dolayı
+        for (var i = 0; i < gridVerticalCount; i++) {
+            table.append($("<tr>"));
+            var row = table.children("tr").last();
+            for (var j = 0; j < gridHorizontalCount; j++) {
+                row.append($("<td>").css({ "min-width": gridWidth, "height": gridHeight}));
+            }
+        }
+        table.css({ "z-index": 4, "position": "absolute", "top": cursor.y + 11 + MenuHeight, "left": cursor.x + 10});
+        $("#anaResimColumn").append(table);
+
+
+         //Relative ( to its parent) mouse position 
+        table.click(function (e) {
+            var posX = $(this).position().left,
+                posY = $(this).position().top;
+            var clickPoint = {
+                x: (e.pageX - posX),
+                y: (e.pageY - posY)
+            };
+
+            var rowTH = Math.floor(clickPoint.x / gridWidth);
+            var colTH = Math.floor(clickPoint.y / gridHeight);
+
+            cursorindex = colTH * gridHorizontalCount + rowTH;
+            ArrangeCursorPosition();
+        });
+    }
+
+    function ResmiSil() {
+        alert("=" + Number(resindex + 1) + "= numaralı resim silinecek. Emin misiniz?");
+        // TODO: backend resmi silme fonksiyonu.
+    }
+    function Completed() {
+        alert("=" + Number(resindex + 1) + "= numaralı resim tamamlandı ve kaydedildi.");
+        NavigateForward();
+        $("#tamamlanmaBar").css({ "width": "85%" });
+    }
+
+    
 </script>
