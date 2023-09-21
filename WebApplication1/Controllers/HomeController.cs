@@ -18,7 +18,7 @@ namespace WebApplication1.Controllers
     {
         private readonly IWebHostEnvironment hostEnvironment;        
         private List<string> files;
-        private int resindex = 0;
+        private int imageIndex = 0;
         private string root_ham, root_temp, root_bos, root_kultur, root_yabanci, root_karisik;
 
         public HomeController(IWebHostEnvironment hostEnvironment)
@@ -35,7 +35,7 @@ namespace WebApplication1.Controllers
             files = Directory.GetFiles(root_ham).ToList();
         }
 
-        public IActionResult Index(int resindex)
+        public IActionResult Index(int imageIndex)
         {
             if (!Directory.Exists(root_ham) || !Directory.Exists(root_temp) || !Directory.Exists(root_bos) || !Directory.Exists(root_kultur) || !Directory.Exists(root_yabanci) || !Directory.Exists(root_karisik))
             {
@@ -47,31 +47,81 @@ namespace WebApplication1.Controllers
                 return Json("Belirtilen konumda görsel bulunamadı!");
             }
 
-            if (resindex >= files.Count)
+            if (imageIndex >= files.Count)
             {
-                resindex = files.Count - 1;
+                imageIndex = files.Count - 1;
             }
-            else if( resindex < 0)
+            else if(imageIndex < 0)
             {
-                resindex = 0;
+                imageIndex = 0;
             }
 
             ViewBag.filesCount = files.Count;
-            this.resindex = resindex;
-            ViewBag.resindex = resindex;
+            this.imageIndex = imageIndex;
+            ViewBag.imageIndex = imageIndex;
 
-            using (FileStream output = new FileStream(Path.Combine(root_temp, "buyuk.jpg"), FileMode.Create))
+            using (FileStream output = new FileStream(Path.Combine(root_temp, "temp1280.jpg"), FileMode.Create))
             {
-                Image img = Image.FromFile(files[resindex]);
-                Image newimg = ResizeImage(img, new Size(1280, 720));
+                Image img = Image.FromFile(files[imageIndex]);
+                Image newimg = ResizeTo1280w(img);
                 newimg.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
             }
             
             return View();
         }
 
+        private static Image ResizeTo1280w(Image image)
+        {
+            int sourceWidth = image.Width;
+            int sourceHeight = image.Height;
+            float percentage = (float)1280 / (float)sourceWidth;
+            int destWidth = (int)(sourceWidth * percentage);
+            int destHeight = (int)(sourceHeight * percentage);
+            Bitmap b = new Bitmap(destWidth, destHeight);
+            Graphics g = Graphics.FromImage((Image)b);
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.DrawImage(image, 0, 0, destWidth, destHeight);
+            g.Dispose();
+            return (Image)b;
+        }
 
-        public IActionResult ResimCrop(int resindex, int cropindex)
+        private static Image CropImage(Image img, Rectangle cropArea)
+        {
+            Bitmap bmpImage = new Bitmap(img);
+            return bmpImage.Clone(cropArea, bmpImage.PixelFormat);
+        }
+
+        /*
+        private static Image ResizeImage(Image imgToResize, Size size)
+        {
+            
+            int sourceWidth = imgToResize.Width;
+            int sourceHeight = imgToResize.Height;
+            float nPercent = 0;
+            float nPercentW = 0;
+            float nPercentH = 0;
+            // Calculate width and height with new desired size
+            nPercentW = ((float)size.Width / (float)sourceWidth);
+            nPercentH = ((float)size.Height / (float)sourceHeight);
+
+
+
+
+            nPercent = Math.Min(nPercentW, nPercentH);
+            // New Width and Height
+            int destWidth = (int)(sourceWidth * nPercent);
+            int destHeight = (int)(sourceHeight * nPercent);
+            Bitmap b = new Bitmap(destWidth, destHeight);
+            Graphics g = Graphics.FromImage((Image)b);
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            // Draw image with new width and height
+            g.DrawImage(imgToResize, 0, 0, destWidth, destHeight);
+            g.Dispose();
+            return (Image)b;
+        }
+
+
+                public IActionResult ResimCrop(int resindex, int cropindex)
         {
             MemoryStream output = new MemoryStream();
             try
@@ -92,39 +142,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-        private static Image CropImage(Image img, Rectangle cropArea)
-        {
-            Bitmap bmpImage = new Bitmap(img);
-            return bmpImage.Clone(cropArea, bmpImage.PixelFormat);
-        }
-
-
-
-        private static Image ResizeImage(Image imgToResize, Size size)
-        {
-            // Get the image current width
-            int sourceWidth = imgToResize.Width;
-            // Get the image current height
-            int sourceHeight = imgToResize.Height;
-            float nPercent = 0;
-            float nPercentW = 0;
-            float nPercentH = 0;
-            // Calculate width and height with new desired size
-            nPercentW = ((float)size.Width / (float)sourceWidth);
-            nPercentH = ((float)size.Height / (float)sourceHeight);
-            nPercent = Math.Min(nPercentW, nPercentH);
-            // New Width and Height
-            int destWidth = (int)(sourceWidth * nPercent);
-            int destHeight = (int)(sourceHeight * nPercent);
-            Bitmap b = new Bitmap(destWidth, destHeight);
-            Graphics g = Graphics.FromImage((Image)b);
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            // Draw image with new width and height
-            g.DrawImage(imgToResize, 0, 0, destWidth, destHeight);
-            g.Dispose();
-            return (Image)b;
-        }
-
+        */
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
