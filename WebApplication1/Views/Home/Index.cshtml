@@ -11,7 +11,7 @@
 <table style="margin:1em">
     <tr>
         <td>
-            <button class="btn secBtn" onclick="SecimYap(0)" style="background-color:darkslategrey">Toprak</button>
+            <button class="btn secBtn" onclick="CursorIncrease()" style="background-color:darkslategrey">Toprak</button>
             <button class="btn secBtn" onclick="SecimYap(1)" style="background-color:darkgreen">Kültür</button>
             <button class="btn secBtn" onclick="SecimYap(2)" style="background-color:orangered">YabancıOt</button>
             <button class="btn secBtn" onclick="SecimYap(3)" style="background-color:blue">%50 Kültür+Yabancı</button>
@@ -53,35 +53,42 @@
 </table>
 
 <script>
-    var gridSize = 64;
+    var gridSize = 128;
     var lineWidth = 1;
     var canvasDesiredWidth = 1000;
     var flyingCanvasDesiredWidth = 600;
-    cursor = { col: 15, row: 7 };
+    cursor = { col: 0, row: 0 };
 
     // Get image Info
-    var image = document.getElementById("image");
-    var imageWidth = image.width; // should be 1280
-    var imageHeight = image.height;
-    var gridCountX = Math.floor(imageWidth / gridSize);
-    var gridCountY = Math.floor(imageHeight / gridSize);
+    var image, imageWidth, imageHeight, gridCountX, gridCountY, cursorindex;
 
     // create canvas
-    var canvas = document.getElementById("canvas");
-    var ctx = canvas.getContext("2d");
-    var percentage = imageWidth / imageHeight ;
-    canvas.width = canvasDesiredWidth;
-    canvas.height = canvas.width / percentage;
-    var cGridSize = gridSize * (canvasDesiredWidth / imageWidth);
+    var canvas, ctx, percentage, cGridSize, flyingCanvas, ctx2;
 
-    $(document).ready(function () {
+    $("#image").on("load",function () {
+        // Get image Info
+        cursorindex = 0;
+        image = document.getElementById("image");
+        imageWidth = image.width; // should be 1280
+        imageHeight = image.height;
+        gridCountX = Math.floor(imageWidth / gridSize);
+        gridCountY = Math.floor(imageHeight / gridSize);
+
+        // create canvas
+        canvas = document.getElementById("canvas");
+        ctx = canvas.getContext("2d");
+        percentage = imageWidth / imageHeight;
+        canvas.width = canvasDesiredWidth;
+        canvas.height = canvas.width / percentage;
+        cGridSize = gridSize * (canvasDesiredWidth / imageWidth);
+
+        flyingCanvas = document.getElementById("flyingCanvas");
+        ctx2 = flyingCanvas.getContext("2d");
+        flyingCanvas.width = flyingCanvasDesiredWidth;
+        flyingCanvas.height = flyingCanvasDesiredWidth;
+
         UpdateAll();
     });
-
-    var flyingCanvas = document.getElementById("flyingCanvas");
-    var ctx2 = flyingCanvas.getContext("2d");
-    flyingCanvas.width = flyingCanvasDesiredWidth;
-    flyingCanvas.height = flyingCanvasDesiredWidth;
 
 
     function UpdateAll() {
@@ -166,7 +173,18 @@
         window.location = "/Home/Index?imageIndex=" + imageIndex;
     }
     
+    function CursorIncrease() {
+        cursorindex++;
+        if (cursorindex > gridCountX * gridCountY - 1)
+            cursorindex = 0;
 
+        ArrangeCursorPosition();
+    }
+    function ArrangeCursorPosition() {
+        cursor.row = Math.floor(cursorindex / gridCountX);
+        cursor.col = cursorindex - (cursor.row * gridCountX);
 
+        UpdateAll();
+    }
     
 </script>
