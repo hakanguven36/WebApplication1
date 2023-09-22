@@ -10,10 +10,11 @@ using System.Threading.Tasks;
 using WebApplication1.Models;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-
+using WebApplication1.Araclar;
 
 namespace WebApplication1.Controllers
 {
+    [Yetki]
     public class HomeController : Controller
     {
         private readonly IWebHostEnvironment hostEnvironment;        

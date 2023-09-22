@@ -11,12 +11,12 @@
 <table style="margin:1em">
     <tr>
         <td>
-            <button class="btn secBtn" onclick="CursorIncrease()" style="background-color:darkslategrey">Toprak</button>
-            <button class="btn secBtn" onclick="SecimYap(1)" style="background-color:darkgreen">Kültür</button>
-            <button class="btn secBtn" onclick="SecimYap(2)" style="background-color:orangered">YabancıOt</button>
-            <button class="btn secBtn" onclick="SecimYap(3)" style="background-color:blue">%50 Kültür+Yabancı</button>
+            <button class="btn secBtn" onclick="ChooseClass(0)" style="background-color:darkslategrey">Toprak</button>
+            <button class="btn secBtn" onclick="ChooseClass(1)" style="background-color:darkgreen">Kültür</button>
+            <button class="btn secBtn" onclick="ChooseClass(2)" style="background-color:orangered">YabancıOt</button>
+            <button class="btn secBtn" onclick="ChooseClass(3)" style="background-color:blue">%50 Kültür+Yabancı</button>
             &nbsp;&nbsp;||&nbsp;&nbsp;
-            <button class="btn secBtn" onclick="SecimYap(4)" style="background-color:black">Anlamsız</button>
+            <button class="btn secBtn" onclick="ChooseClass(4)" style="background-color:black">Anlamsız</button>
         </td>
         <td style="width:30px">&nbsp;</td>
         <td style="padding:2px">
@@ -54,7 +54,7 @@
 
 <script>
     var gridSize = 128;
-    var lineWidth = 1;
+    var lineWidth = 2;
     var canvasDesiredWidth = 1000;
     var flyingCanvasDesiredWidth = 600;
     cursor = { col: 0, row: 0 };
@@ -94,6 +94,7 @@
     function UpdateAll() {
         DrawImage();
         DrawGrid();
+        PaintChosenGrids();
         DrawRedRect();
         DrawFlyingImage();
     }
@@ -142,6 +143,7 @@
         }
     }
     function DrawRedRect() {
+        ctx.lineWidth= 4;
         ctx.strokeStyle = "red";
         ctx.beginPath();
         ctx.rect(cursor.col * cGridSize, cursor.row * cGridSize, cGridSize, cGridSize);
@@ -151,7 +153,7 @@
         ctx2.drawImage(image, cursor.col * gridSize, cursor.row * gridSize, gridSize, gridSize, 0, 0, flyingCanvas.width, flyingCanvas.height);
     }
         
-    var Turler = ["Toprak", "Kültür", "YabancıOt", "%50 Kültür+Yabancı", "Anlamsız"];
+    
     var secimler = [];
     var filesCount = Number($("#filesCount").val());
     var imageIndex = Number($("#imageIndex").val());
@@ -172,6 +174,11 @@
         }
         window.location = "/Home/Index?imageIndex=" + imageIndex;
     }
+
+    function ChooseClass(choice) {
+        secimler.push({ imageIndex: imageIndex, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row });        
+        CursorIncrease();
+    }
     
     function CursorIncrease() {
         cursorindex++;
@@ -186,5 +193,31 @@
 
         UpdateAll();
     }
+
+    var Colors = ["gray", "green", "red", "blue", "purple"]
+    function PaintChosenGrids() {
+        ctx.globalAlpha = 0.4;
+
+        var x, y, w, h;
+        for (var i = 0; i < secimler.length; i++) {
+            
+            ctx.fillStyle = Colors[secimler[i].choice];
+
+            x = cGridSize * secimler[i].cursorCol;
+            y = cGridSize * secimler[i].cursorRow;
+            w = cGridSize;
+            h = cGridSize;
+
+            ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+        }
+        ctx.globalAlpha = 1.0;
+    }
+
+    $("#canvas").click(function (e) {
+        cursor.col = Math.floor(e.offsetX / cGridSize);
+        cursor.row = Math.floor(e.offsetY / cGridSize);
+        cursor.row = (cursor.row > gridCountY-1) ? gridCountY -1 : cursor.row;
+        UpdateAll();        
+    })
     
 </script>
