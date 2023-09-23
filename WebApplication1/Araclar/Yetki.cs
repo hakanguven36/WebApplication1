@@ -12,19 +12,35 @@ namespace WebApplication1.Araclar
 {
 	public class YetkiAttribute : ActionFilterAttribute
 	{
+		public string admin { get; set; }
+		public YetkiAttribute() => admin = "";
+		public YetkiAttribute(string admin) => this.admin = admin;
+
 		public override void OnActionExecuting(ActionExecutingContext context)
 		{
-			if(context.HttpContext.Session.GetObject<User>("user") == null)
+			User user = context.HttpContext.Session.GetObject<User>("user");
+			if (user == null)
 				Yetkisiz(context);
+			if(admin == "admin")
+				if(user.admin == false)
+					Adminsiz(context);
+
 		}
 
-		private void Yetkisiz(ActionExecutingContext context)
-		{
+		private void Yetkisiz(ActionExecutingContext context) =>
 			context.Result =
 				new RedirectToRouteResult(
 				new RouteValueDictionary {
 								{ "Controller", "Accounts" },
 								{ "Action", "Index" }});
-		}
+		
+
+		private void Adminsiz(ActionExecutingContext context) =>
+			context.Result =
+				new RedirectToRouteResult(
+				new RouteValueDictionary {
+								{ "Controller", "Accounts" },
+								{ "Action", "Index" }});
+		
 	}
 }

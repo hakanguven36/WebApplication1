@@ -17,57 +17,44 @@ namespace WebApplication1.Controllers
     [Yetki]
     public class HomeController : Controller
     {
-        private readonly IWebHostEnvironment hostEnvironment;        
-        private List<string> files;
-        private int imageIndex = 0;
-        private string root_ham, root_temp, root_bos, root_kultur, root_yabanci, root_karisik;
+        private readonly MyContext db;
+        string fileRoot = "";
 
-        public HomeController(IWebHostEnvironment hostEnvironment)
+        public HomeController(MyContext db, IWebHostEnvironment environment)
         {
-            this.hostEnvironment = hostEnvironment;
-
-            root_ham = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Ham");
-            root_temp = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Temp");
-            root_bos = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Bos");
-            root_kultur = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Kultur");
-            root_yabanci = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Yabanci");
-            root_karisik = Path.Combine(hostEnvironment.WebRootPath, "dosyalar/Karisik");
-
-            files = Directory.GetFiles(root_ham).ToList();
+            fileRoot = Path.Combine(environment.WebRootPath, "dosyalar");
+            this.db = db;
         }
 
-        public IActionResult Index(int imageIndex)
+        public IActionResult Index(int? id = 1)
         {
-            if (!Directory.Exists(root_ham) || !Directory.Exists(root_temp) || !Directory.Exists(root_bos) || !Directory.Exists(root_kultur) || !Directory.Exists(root_yabanci) || !Directory.Exists(root_karisik))
+            string hata = "";
+            int skipint = id ?? 1;
+            skipint--;
+            int filesCount = db.HamResim.Count();
+            if (filesCount == 0)
             {
-                return Json("Klasörlerden biri yada birkaçı eksik! wwwroot/dosyalar içinde Ham, Temp, Bos, Kultur, Yabanci, Karisik isimli klasörleri oluşturun ");
+                hata += "Veritabanında resim yok! ";
+                ViewBag.hata = hata;
+                return View();
             }
+            if(skipint+1 > filesCount)
+            {
+                hata += "öyle bir resim yok! ";
+                ViewBag.hata = hata;
+                return View();
+            }
+            HamResim resim = db.HamResim.Skip(skipint).FirstOrDefault();
 
-            if(files.Count == 0)
-            {
-                return Json("Belirtilen konumda görsel bulunamadı!");
-            }
-
-            if (imageIndex >= files.Count)
-            {
-                imageIndex = files.Count - 1;
-            }
-            else if(imageIndex < 0)
-            {
-                imageIndex = 0;
-            }
-
-            ViewBag.filesCount = files.Count;
-            this.imageIndex = imageIndex;
-            ViewBag.imageIndex = imageIndex;
-
-            using (FileStream output = new FileStream(Path.Combine(root_temp, "temp1280.jpg"), FileMode.Create))
-            {
-                Image img = Image.FromFile(files[imageIndex]);
-                Image newimg = ResizeTo1280w(img);
-                newimg.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
-            }
             
+            
+            ViewBag.path = Path.Combine("/dosyalar", resim.sysname);
+
+            ViewBag.imageIndex = skipint+1;
+            ViewBag.filesCount = filesCount;
+
+
+
             return View();
         }
 

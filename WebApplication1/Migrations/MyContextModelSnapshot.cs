@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebApplication1.Models;
 
@@ -15,80 +14,185 @@ namespace WebApplication1.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.17")
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("ProductVersion", "5.0.17");
 
             modelBuilder.Entity("WebApplication1.Models.Etiket", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("HamResimID")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("choice")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("cursorCol")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("cursorRow")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
-                    b.Property<int>("imageIndex")
-                        .HasColumnType("int");
+                    b.Property<int>("cursorSize")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("HamResimID");
 
                     b.ToTable("Etiket");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.Tamamlayan", b =>
+            modelBuilder.Entity("WebApplication1.Models.HamResim", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProjeID")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("UserID")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("contentType")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("date")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("imageIndex")
-                        .HasColumnType("int");
+                    b.Property<string>("extention")
+                        .HasColumnType("TEXT");
 
-                    b.Property<string>("username")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("imageFormat")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("orjname")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("seenOrWhat")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("sizekb")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("sysname")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("ID");
 
-                    b.ToTable("Tamamlayan");
+                    b.HasIndex("ProjeID");
+
+                    b.HasIndex("UserID");
+
+                    b.ToTable("HamResim");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Proje", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("name")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ID");
+
+                    b.ToTable("Proje");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.User", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("admin")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("hatali")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("kilitli")
-                        .HasColumnType("bit");
+                        .HasColumnType("INTEGER");
 
-                    b.Property<string>("password")
-                        .HasMaxLength(12)
-                        .HasColumnType("nvarchar(12)");
+                    b.Property<string>("passwordEnc")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("username")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("ID");
 
                     b.ToTable("User");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.UserSetting", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UserID")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("canvasSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("seenOrWhat")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ucanCanvasSize")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("UserID");
+
+                    b.ToTable("UserSetting");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Etiket", b =>
+                {
+                    b.HasOne("WebApplication1.Models.HamResim", "HamResim")
+                        .WithMany()
+                        .HasForeignKey("HamResimID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("HamResim");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.HamResim", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Proje", "Proje")
+                        .WithMany()
+                        .HasForeignKey("ProjeID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WebApplication1.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID");
+
+                    b.Navigation("Proje");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.UserSetting", b =>
+                {
+                    b.HasOne("WebApplication1.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

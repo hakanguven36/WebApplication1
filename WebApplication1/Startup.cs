@@ -25,11 +25,17 @@ namespace WebApplication1
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<MyContext>(option => option.UseSqlServer(Configuration.GetConnectionString("MyConn")));
+            services.AddDbContext<MyContext>();
             services.AddMvc(option => option.EnableEndpointRouting = false)
-                .AddRazorRuntimeCompilation()
-                .AddJsonOptions(opt => opt.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping);
-            services.AddSession(option => option.IdleTimeout = TimeSpan.FromMinutes(30));
+                .AddRazorRuntimeCompilation();
+            services.AddSession(configure => new SessionOptions()
+            {
+                IdleTimeout = TimeSpan.FromMinutes(20),
+                Cookie = new Microsoft.AspNetCore.Http.CookieBuilder() { HttpOnly = false }
+            });
+            // services.Configure<GoogleReCaptchaSettings>(Configuration.GetSection("GoogleReCaptcha"));
+            // services.AddTransient<GoogleRecapService>();
+            services.Configure<GenelAyarlar>(Configuration.GetSection("GenelAyarlar"));
             services.AddControllersWithViews();
         }
 

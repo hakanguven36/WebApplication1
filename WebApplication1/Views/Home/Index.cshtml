@@ -2,31 +2,58 @@
     ViewData["Title"] = "Home Page";
 }
 
+
+
 <input type="hidden" id="filesCount" value="@ViewBag.filesCount" />
 <input type="hidden" id="imageIndex" value="@ViewBag.imageIndex" />
-<div style="position:absolute; top:-8000px" >
-    <img id="image" src="~/dosyalar/Temp/temp1280.jpg" />
+<div style="position:absolute; top:-8000px">
+    <img id="image" src="@ViewBag.path" />
 </div>
 
-<table style="margin:1em">
+@section Styles {
+<style>
+    .secBtn {
+        color: white;
+    }
+        .secBtn:hover {
+            color: white !important;
+        }
+</style>
+}
+
+
+@if(!string.IsNullOrWhiteSpace(ViewBag.hata))
+{ 
+    <span class="text-danger">@ViewBag.hata</span>
+}
+
+<table class="table table-sm table-borderless">
     <tr>
-        <td>
-            <button class="btn secBtn" onclick="ChooseClass(0)" style="background-color:darkslategrey">Toprak</button>
+        <td colspan="2" style="border-bottom:1px gray solid; padding-bottom:18px">
+            <span style="cursor:pointer" class="p-2">@(ViewBag.imageIndex) / @ViewBag.filesCount</span>
+            <button class="btn btn-sm btn-secondary" onclick="NavigateBackward()"><< Geri</button>
+            <button class="btn btn-sm btn-secondary" onclick="NavigateForward()">İleri >></button>
+            <span class="p-2">
+                <select class="form-control-sm">
+                    <option>İşlenmemişler</option>
+                    <option>İşlenmişler</option>
+                    <option>Tamamı</option>
+                </select>
+            </span>
+            <span class="p-2"> || </span>
+            <button class="btn btn-sm btn-success" onclick="Completed()"> Etiketleri Kaydet </button>
+            <span class="p-2"> || </span>
+            <button class="btn btn-sm btn-outline-danger" onclick="ResmiSil()"> resmi sil </button>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding-top:18px">
+            <button class="btn secBtn" onclick="ChooseClass(0)" style="background-color:darkslategray">Toprak</button>
             <button class="btn secBtn" onclick="ChooseClass(1)" style="background-color:darkgreen">Kültür</button>
             <button class="btn secBtn" onclick="ChooseClass(2)" style="background-color:orangered">YabancıOt</button>
-            <button class="btn secBtn" onclick="ChooseClass(3)" style="background-color:blue">%50 Kültür+Yabancı</button>
+            <button class="btn secBtn" onclick="ChooseClass(3)" style="background-color:royalblue">%50 Kültür+Yabancı</button>
             &nbsp;&nbsp;||&nbsp;&nbsp;
-            <button class="btn secBtn" onclick="ChooseClass(4)" style="background-color:black">Anlamsız</button>
-        </td>
-        <td style="width:30px">&nbsp;</td>
-        <td style="padding:2px">
-            <button class="btn btn-secondary" onclick="NavigateBackward()"><< Geri</button>
-            <span>@(ViewBag.imageIndex+1) / @ViewBag.filesCount</span>
-            <button class="btn btn-secondary" onclick="NavigateForward()">İleri >></button>
-            &nbsp;&nbsp;||&nbsp;&nbsp;
-            <button class="btn btn-outline-success" onclick="Completed()"> Tamamlandı </button>
-            &nbsp;&nbsp;||&nbsp;&nbsp;
-            <button class="btn btn-sm btn-outline-danger" onclick="ResmiSil()"> resmi sil </button>
+            <button class="btn btn-sm secBtn" onclick="ClearClasses()" style="background-color:black">Tümünü Temizle!</button>
         </td>
     </tr>
     <tr>
@@ -39,7 +66,7 @@
             </div>
             <canvas id="flyingCanvas"></canvas>
         </td>
-        <td style="width:30px">&nbsp;</td>
+
         <td style="vertical-align:top">
             <div style="margin: 2px">
                 <span style="border: solid 1px gray; border-radius: 2px; padding: 3px">
@@ -51,6 +78,7 @@
         </td>
     </tr>
 </table>
+    
 
 <script>
     var gridSize = 128;
@@ -65,7 +93,7 @@
     // create canvas
     var canvas, ctx, percentage, cGridSize, flyingCanvas, ctx2;
 
-    $("#image").on("load",function () {
+    $("#image").on("load", function () {
         // Get image Info
         cursorindex = 0;
         image = document.getElementById("image");
@@ -101,7 +129,7 @@
 
     function CanvasChangeSize(increase) {
         if (increase)
-            canvasDesiredWidth+= 50;
+            canvasDesiredWidth += 50;
         else
             canvasDesiredWidth -= 50;
         canvasDesiredWidth = canvasDesiredWidth < 200 ? 200 : canvasDesiredWidth;
@@ -110,7 +138,7 @@
         UpdateAll();
     }
     function FlyingCanvasChangeSize(increase) {
-        if(increase)
+        if (increase)
             flyingCanvasDesiredWidth += 50;
         else
             flyingCanvasDesiredWidth -= 50;
@@ -143,7 +171,7 @@
         }
     }
     function DrawRedRect() {
-        ctx.lineWidth= 4;
+        ctx.lineWidth = 4;
         ctx.strokeStyle = "red";
         ctx.beginPath();
         ctx.rect(cursor.col * cGridSize, cursor.row * cGridSize, cGridSize, cGridSize);
@@ -152,35 +180,51 @@
     function DrawFlyingImage() {
         ctx2.drawImage(image, cursor.col * gridSize, cursor.row * gridSize, gridSize, gridSize, 0, 0, flyingCanvas.width, flyingCanvas.height);
     }
-        
-    
+
+
     var secimler = [];
     var filesCount = Number($("#filesCount").val());
     var imageIndex = Number($("#imageIndex").val());
 
     function NavigateBackward() {
+        console.log("imageIndex"+imageIndex);
         imageIndex -= 1;
-        if (imageIndex < 0) {
-            imageIndex = 0;
+        if (imageIndex < 1) {
+            imageIndex = 1;
             return;
         }
-        window.location = "/Home/Index?imageIndex=" + imageIndex;
+        console.log("yeni image index"+imageIndex);
+        window.location = "/Home/Index/" + imageIndex;
     }
     function NavigateForward() {
         imageIndex += 1;
-        if (imageIndex > filesCount - 1) {
-            imageIndex = filesCount - 1;
+        if (imageIndex > filesCount) {
+            imageIndex = filesCount;
             return;
         }
-        window.location = "/Home/Index?imageIndex=" + imageIndex;
+        window.location = "/Home/Index/" + imageIndex;
     }
 
     function ChooseClass(choice) {
-        secimler.push({ imageIndex: imageIndex, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row });        
+        var pack = { imageIndex: imageIndex, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row };
+        var packExist = false;
+        for (var i = 0; i < secimler.length; i++) {
+            // pack zaten varsa sadece choice değerini değiştir.. array.push yapma!
+            if (secimler[i].cursorCol == pack.cursorCol && secimler[i].cursorRow == pack.cursorRow) {
+                secimler[i].choice = pack.choice;
+                packExist = true;
+            }
+        }
+
+        if (!packExist) {
+            secimler.push({ imageIndex: imageIndex, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row });
+        }
+
         CursorIncrease();
     }
-    
+
     function CursorIncrease() {
+        cursorindex = gridCountX * cursor.row + cursor.col;
         cursorindex++;
         if (cursorindex > gridCountX * gridCountY - 1)
             cursorindex = 0;
@@ -194,13 +238,13 @@
         UpdateAll();
     }
 
-    var Colors = ["gray", "green", "red", "blue", "purple"]
+    var Colors = ["black", "green", "red", "blue", "purple"]
     function PaintChosenGrids() {
-        ctx.globalAlpha = 0.4;
+        ctx.globalAlpha = 0.3;
 
         var x, y, w, h;
         for (var i = 0; i < secimler.length; i++) {
-            
+
             ctx.fillStyle = Colors[secimler[i].choice];
 
             x = cGridSize * secimler[i].cursorCol;
@@ -216,8 +260,13 @@
     $("#canvas").click(function (e) {
         cursor.col = Math.floor(e.offsetX / cGridSize);
         cursor.row = Math.floor(e.offsetY / cGridSize);
-        cursor.row = (cursor.row > gridCountY-1) ? gridCountY -1 : cursor.row;
-        UpdateAll();        
+        cursor.row = (cursor.row > gridCountY - 1) ? gridCountY - 1 : cursor.row;
+        UpdateAll();
     })
-    
-</script>
+
+    function ClearClasses() {
+        window.location.reload(true);
+    }
+
+</script>    
+

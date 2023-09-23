@@ -26,6 +26,7 @@ namespace WebApplication1.Controllers
 		public IActionResult Index() => View();
 
 		[HttpPost]
+		[ValidateAntiForgeryToken]
 		public IActionResult Index(AccountsViewModel model)
 		{
 			if (ModelState.IsValid)
@@ -34,25 +35,29 @@ namespace WebApplication1.Controllers
 				if (user == null)
 				{
 					ModelState.AddModelError("", "Kullanıcı adı ve şifrenizi kontrol ediniz");
+					return View(model);
+				}
+				
+				if (user.kilitli)
+				{
+					ModelState.AddModelError("", "Kullanıcı adı ve şifrenizi kontrol ediniz");
+					return View(model);
+				}
+				
+				if (user.password != model.password)
+				{
+					bool kilitli = HataArttır(user);
+					if (kilitli)
+						ModelState.AddModelError("", "Kullanıcı hesabınız kilitlenmiştir. Yönetici ile görüşünüz.");
+					else
+						ModelState.AddModelError("", "Kullanıcı adı ve şifrenizi kontrol ediniz");
+					return View(model);
+
 				}
 				else
 				{
-					if(model.username == ayarlar.CreatorUsername & model.password == ayarlar.CreatorPassword)
-					{
-						SuperYetkiVer(user);
-						return RedirectToAction("Index", "Home");
-					}
-
-					if (user.password != model.password)
-					{
-						HataArttır(user);
-						ModelState.AddModelError("", "Kullanıcı adı ve şifrenizi kontrol ediniz");
-					}
-					else
-					{
-						YetkiVer(user);
-						return RedirectToAction("Index", "Home");
-					}
+					YetkiVer(user);
+					return RedirectToAction("Index", "Home");
 				}
 			}
 			return View(model);
@@ -60,34 +65,47 @@ namespace WebApplication1.Controllers
 
 		private void YetkiVer(User user)
 		{
+			user.admin = user.username == ayarlar.CreatorUsername;
 			HttpContext.Session.SetObject("user", user);
-		}
-
-		private void SuperYetkiVer(User user)
-		{
-			YetkiVer(user);
-			HttpContext.Session.SetString("admin", "evet");
 		}
 
 		private bool HataArttır(User user)
 		{
-			bool ret = true;
+			bool kilitli = false;
+
 			user.hatali++;
-			if (user.hatali > 5)
-			{
-				user.kilitli = true;
-				ret = false;
-			}
-			db.Entry(user).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+			user.kilitli = kilitli = user.hatali > 5 ? true : false;
+
+			db.Update(user);
 			db.SaveChanges();
-			return ret;
+			return kilitli;
 		}
 
 		[Yetki]
-		public IActionResult ÇıkışYap()
+		public IActionResult Logout()
 		{
 			HttpContext.Session.Clear();
 			return RedirectToAction("Index", "Accounts");
-		}		
+		}
+
+		public IActionResult Kurulum()
+        {
+            try
+            {
+				User user = db.User.FirstOrDefault(u => u.username == ayarlar.CreatorUsername);
+				if (user == null)
+					user = new User();
+				user.username = ayarlar.CreatorUsername;
+				user.password = ayarlar.CreatorPassword;
+				db.Update(user);
+				db.SaveChanges();
+				return Json("Tamam");
+			}
+            catch (Exception e) 
+            {
+				return Json(e.Message);
+            }
+			
+        }
 	}
 }
