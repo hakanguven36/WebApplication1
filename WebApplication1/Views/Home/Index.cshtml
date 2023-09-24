@@ -3,7 +3,8 @@
 }
 
 
-
+<input type="hidden" id="seenorwhatgelen" value="@ViewBag.seenorwhat" />
+<input type="hidden" id="hamResimID" value="@ViewBag.hamResimID" />
 <input type="hidden" id="filesCount" value="@ViewBag.filesCount" />
 <input type="hidden" id="imageIndex" value="@ViewBag.imageIndex" />
 <div style="position:absolute; top:-8000px">
@@ -34,10 +35,10 @@
             <button class="btn btn-sm btn-secondary" onclick="NavigateBackward()"><< Geri</button>
             <button class="btn btn-sm btn-secondary" onclick="NavigateForward()">İleri >></button>
             <span class="p-2">
-                <select class="form-control-sm">
-                    <option>İşlenmemişler</option>
-                    <option>İşlenmişler</option>
-                    <option>Tamamı</option>
+                <select id="seenorwhat" class="form-control-sm">
+                    <option value="0" >İşlenmemişler</option>
+                    <option value="1">İşlenmişler</option>
+                    <option value="2">Tamamı</option>
                 </select>
             </span>
             <span class="p-2"> || </span>
@@ -73,6 +74,7 @@
                     <span style="margin: 4px; margin-right: 10px; cursor: pointer" onclick="CanvasChangeSize(false)">-</span>
                     <span style="margin: 4px; margin-left: 10px; cursor: pointer" onclick="CanvasChangeSize(true)">+</span>
                 </span>
+                <input type="range" id="etiketPaintRange"/>
             </div>
             <canvas id="canvas"></canvas>
         </td>
@@ -85,7 +87,22 @@
     var lineWidth = 2;
     var canvasDesiredWidth = 1000;
     var flyingCanvasDesiredWidth = 600;
+    var seenorwhat = 0;
+    var hamResimID = Number($("#hamResimID").val());
+    var etiketPaintRange = 0.3;
     cursor = { col: 0, row: 0 };
+
+    $(document).ready(function () {
+        $("#seenorwhat").val($("#seenorwhatgelen").val());
+        GetEtiketler();
+    });
+
+    
+
+    $("#seenorwhat").change(function () {
+        seenorwhat = $(this).val();
+        window.location = "/Home/Index/" + imageIndex +"?seenorwhat=" + seenorwhat;
+    })
 
     // Get image Info
     var image, imageWidth, imageHeight, gridCountX, gridCountY, cursorindex;
@@ -217,10 +234,18 @@
         }
 
         if (!packExist) {
-            secimler.push({ imageIndex: imageIndex, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row });
+            secimler.push({ choice: choice, cursorCol: cursor.col, cursorRow: cursor.row, cursorSize: gridSize });
         }
 
         CursorIncrease();
+    }
+
+    function GetEtiketler() {
+        new OzAjax("/Home/GetEtiketler", GET, { hamResimID: hamResimID }, GetEtBasari).Send();
+        function GetEtBasari(data) {
+            secimler = JSON.parse(data);
+            PaintChosenGrids();
+        }
     }
 
     function CursorIncrease() {
@@ -240,7 +265,7 @@
 
     var Colors = ["black", "green", "red", "blue", "purple"]
     function PaintChosenGrids() {
-        ctx.globalAlpha = 0.3;
+        ctx.globalAlpha = etiketPaintRange;
 
         var x, y, w, h;
         for (var i = 0; i < secimler.length; i++) {
@@ -265,8 +290,25 @@
     })
 
     function ClearClasses() {
-        window.location.reload(true);
+        secimler = [];
+        UpdateAll();
     }
+
+    function Completed() {
+        
+        new OzAjax("/Home/Tamamlanan", POST, { secimler: secimler, hamResimID: hamResimID  }, KaydetBasari, KaydetHata).Send();
+        function KaydetBasari(data) {
+            alert(data);
+        }
+        function KaydetHata(error) {
+            alert(error);
+        }
+    }
+
+    $("#etiketPaintRange").change(function () {
+        etiketPaintRange = $(this).val() / 100.0;
+        UpdateAll();
+    });
 
 </script>    
 

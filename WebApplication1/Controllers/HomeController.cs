@@ -11,6 +11,7 @@ using WebApplication1.Models;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using WebApplication1.Araclar;
+using WebApplication1.ViewModels;
 
 namespace WebApplication1.Controllers
 {
@@ -26,7 +27,7 @@ namespace WebApplication1.Controllers
             this.db = db;
         }
 
-        public IActionResult Index(int? id = 1)
+        public IActionResult Index(int? id, int? seenorwhat)
         {
             string hata = "";
             int skipint = id ?? 1;
@@ -44,93 +45,104 @@ namespace WebApplication1.Controllers
                 ViewBag.hata = hata;
                 return View();
             }
-            HamResim resim = db.HamResim.Skip(skipint).FirstOrDefault();
 
-            
-            
-            ViewBag.path = Path.Combine("/dosyalar", resim.sysname);
+            if (seenorwhat != null)
+            {
+                HttpContext.Session.SetInt32("seenorwhat", seenorwhat??0);
+                skipint = 0;
+            }
 
-            ViewBag.imageIndex = skipint+1;
+            int sow = HttpContext.Session.GetInt32("seenorwhat")??0;
+            HamResim resim = new HamResim();
+            switch (sow)
+            {
+                case 0:
+                    filesCount = db.HamResim.Where(u => u.seenOrWhat == SEENORWHAT.undone).Count();
+                    resim = db.HamResim.Where(u => u.seenOrWhat == SEENORWHAT.undone).Skip(skipint).FirstOrDefault();
+                    break;
+                case 1:
+                    filesCount = db.HamResim.Where(u => u.seenOrWhat == SEENORWHAT.done).Count();
+                    resim = db.HamResim.Where(u => u.seenOrWhat == SEENORWHAT.done).Skip(skipint).FirstOrDefault();
+                    break;
+                default:
+                    resim = db.HamResim.Skip(skipint).FirstOrDefault();
+                    break;
+            }
+
+
+            ViewBag.imageIndex = skipint + 1;
             ViewBag.filesCount = filesCount;
+            ViewBag.seenorwhat = HttpContext.Session.GetInt32("seenorwhat")??0;
 
-
-
+            if (resim == null)
+            {
+                hata += "öyle bir resim yok! ";
+                ViewBag.hata = hata;
+                return View();
+            }
+            else
+            {
+                ViewBag.path = Path.Combine("/dosyalar", resim.sysname);
+                ViewBag.hamResimID = resim.ID;
+            }
             return View();
         }
 
-        private static Image ResizeTo1280w(Image image)
+        public IActionResult GetEtiketler(int hamResimID)
         {
-            int sourceWidth = image.Width;
-            int sourceHeight = image.Height;
-            float percentage = (float)1280 / (float)sourceWidth;
-            int destWidth = (int)(sourceWidth * percentage);
-            int destHeight = (int)(sourceHeight * percentage);
-            Bitmap b = new Bitmap(destWidth, destHeight);
-            Graphics g = Graphics.FromImage((Image)b);
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.DrawImage(image, 0, 0, destWidth, destHeight);
-            g.Dispose();
-            return (Image)b;
+            List<SecimlerViewModel> secimler = new List<SecimlerViewModel>();
+            foreach (var item in db.Etiket.Where(u => u.HamResimID == hamResimID).ToList())
+            {
+                secimler.Add(new SecimlerViewModel() { choice = item.choice, cursorCol = item.cursorCol, cursorRow = item.cursorRow, cursorSize = item.cursorSize });
+            } 
+            return Json(secimler);
         }
 
-        private static Image CropImage(Image img, Rectangle cropArea)
+        [HttpPost]
+        public IActionResult Tamamlanan(List<SecimlerViewModel> secimler, int hamResimID)
         {
-            Bitmap bmpImage = new Bitmap(img);
-            return bmpImage.Clone(cropArea, bmpImage.PixelFormat);
-        }
-
-        /*
-        private static Image ResizeImage(Image imgToResize, Size size)
-        {
-            
-            int sourceWidth = imgToResize.Width;
-            int sourceHeight = imgToResize.Height;
-            float nPercent = 0;
-            float nPercentW = 0;
-            float nPercentH = 0;
-            // Calculate width and height with new desired size
-            nPercentW = ((float)size.Width / (float)sourceWidth);
-            nPercentH = ((float)size.Height / (float)sourceHeight);
-
-
-
-
-            nPercent = Math.Min(nPercentW, nPercentH);
-            // New Width and Height
-            int destWidth = (int)(sourceWidth * nPercent);
-            int destHeight = (int)(sourceHeight * nPercent);
-            Bitmap b = new Bitmap(destWidth, destHeight);
-            Graphics g = Graphics.FromImage((Image)b);
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            // Draw image with new width and height
-            g.DrawImage(imgToResize, 0, 0, destWidth, destHeight);
-            g.Dispose();
-            return (Image)b;
-        }
-
-
-                public IActionResult ResimCrop(int resindex, int cropindex)
-        {
-            MemoryStream output = new MemoryStream();
             try
             {
-                Image img = Image.FromFile(files[resindex]);
-                Image newimg = ResizeImage(img, new Size(1280, 720));
-                Image cropped = CropImage(newimg, new Rectangle((cropindex / 5) * 256 , (cropindex % 5) * 144, 256, 144));
-                cropped.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
-                return File(output.GetBuffer(), "image/jpeg");
+                HamResim resim = db.HamResim.FirstOrDefault(u => u.ID == hamResimID);
+
+                List<Etiket> willDelEtiketList = db.Etiket.Where(u => u.HamResimID == hamResimID).ToList();
+                if (willDelEtiketList.Count() > 0)
+                {
+                    db.RemoveRange(willDelEtiketList);
+                    db.SaveChanges();
+                }
+
+                if (secimler.Count > 0)
+                {
+                    resim.seenOrWhat = SEENORWHAT.done;
+
+                    foreach (var item in secimler)
+                    {
+                        Etiket etiket = new Etiket();
+                        etiket.choice = item.choice;
+                        etiket.cursorCol = item.cursorCol;
+                        etiket.cursorRow = item.cursorRow;
+                        etiket.HamResim = resim;
+                        etiket.cursorSize = item.cursorSize;
+                        db.Add(etiket);
+                        db.SaveChanges();
+                    }
+                }
+                else
+                {
+                    resim.seenOrWhat = SEENORWHAT.undone;                    
+                }
+                db.Update(resim);
+                db.SaveChanges();
+                return Json("tamam");
             }
             catch (Exception e)
             {
-                return Json("Hata: " + e.Message);
-            }
-            finally
-            {
-                HttpContext.Response.OnCompleted(async () => await Task.Run(() => output.Dispose()));
+                return Json(e.Message);
             }
         }
 
-        */
+
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

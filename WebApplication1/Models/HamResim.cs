@@ -39,8 +39,7 @@ namespace WebApplication1.Models
 
     public enum SEENORWHAT
     {
-        seen,
-        notseen,
-        all
+        undone,
+        done
     }
 }

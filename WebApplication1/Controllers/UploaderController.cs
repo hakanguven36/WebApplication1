@@ -56,21 +56,15 @@ namespace WebApplication1.Controllers
                     var lenght = file.Length;
                     string sysname = GetUniqueFileName(fileName);
 
+                    using (Stream stream = new MemoryStream()) { 
+                        file.CopyTo(stream);
+                        Image orjImage = new Bitmap(stream);
+                        Image image1024 = ResizeTo1280w(orjImage);
+                        image1024.Save(Path.Combine(fileRoot, sysname));
 
-                    // TODO: 1280 genişlik ile kaydetmem gerekiyor.
-
-
-
-                    using(FileStream fs = new FileStream(Path.Combine(fileRoot, sysname), FileMode.Create))
-                    {
-                        file.CopyTo(fs);
-                        fs.Position = 0;
-                        Image orjimage = new Bitmap(fs);
-                        Image thumb = ResizeImage(orjimage, new Size(200,200));
+                        Image thumb = ResizeImage(orjImage, new Size(200,200));
                         thumb.Save(Path.Combine(fileRoot, "thumbs", sysname));
                     }
-                    
-
 
                     HamResim resim = new HamResim();
                     int formProjeID = int.Parse(form["proje"].tooString());
@@ -80,7 +74,7 @@ namespace WebApplication1.Controllers
                     resim.orjname = fileName;
                     resim.extention = Path.GetExtension(fileName);
                     resim.date = DateTime.Now;
-                    resim.seenOrWhat = SEENORWHAT.notseen;
+                    resim.seenOrWhat = SEENORWHAT.undone;
                     resim.sysname = sysname;
                     db.Add(resim);
                     db.SaveChanges();
@@ -102,6 +96,9 @@ namespace WebApplication1.Controllers
                 FileInfo fi = new FileInfo(Path.Combine(fileRoot, hamResim.sysname));
                 if (fi.Exists)
                     fi.Delete();
+                FileInfo ft = new FileInfo(Path.Combine(fileRoot,"thumbs", hamResim.sysname));
+                if (ft.Exists)
+                    ft.Delete();
 
                 db.Remove(hamResim);
                 db.SaveChanges();
@@ -141,6 +138,26 @@ namespace WebApplication1.Controllers
             return (Image)b;
         }
 
+        private static Image ResizeTo1280w(Image image)
+        {
+            int sourceWidth = image.Width;
+            int sourceHeight = image.Height;
+            float percentage = (float)1280 / (float)sourceWidth;
+            int destWidth = (int)(sourceWidth * percentage);
+            int destHeight = (int)(sourceHeight * percentage);
+            Bitmap b = new Bitmap(destWidth, destHeight);
+            Graphics g = Graphics.FromImage((Image)b);
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.DrawImage(image, 0, 0, destWidth, destHeight);
+            g.Dispose();
+            return (Image)b;
+        }
+
+        private static Image CropImage(Image img, Rectangle cropArea)
+        {
+            Bitmap bmpImage = new Bitmap(img);
+            return bmpImage.Clone(cropArea, bmpImage.PixelFormat);
+        }
 
         private string GetUniqueFileName(string fileName)
         {
