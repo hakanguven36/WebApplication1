@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace WebApplication1.Models
 {
-    [Table("HamResim")]
-    public class HamResim
+    [Table("Photo")]
+    public class Photo
     {
         public int ID { get; set; }
 
@@ -24,22 +24,16 @@ namespace WebApplication1.Models
 
         public string imageFormat { get; set; }
 
-        public SEENORWHAT seenOrWhat { get; set; }
+        public bool completed { get; set; }
 
-        [ForeignKey(nameof(Proje))]
-        public int ProjeID { get; set; }
-        public Proje Proje { get; set; }
+        [ForeignKey(nameof(Project))]
+        public int ProjectID { get; set; }
+        public Project Project { get; set; }
 
         [ForeignKey(nameof(User))]
         public int? UserID { get; set; }
         public User User { get; set; }        
 
         public DateTime date { get; set; }
-    }
-
-    public enum SEENORWHAT
-    {
-        undone,
-        done
     }
 }

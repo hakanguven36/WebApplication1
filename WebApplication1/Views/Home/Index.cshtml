@@ -2,41 +2,40 @@
     ViewData["Title"] = "Home Page";
 }
 
+@section Styles {
+    <style>
+        .secBtn {
+            color: white;
+        }
+            .secBtn:hover {
+                color: white !important;
+            }
+    </style>
+}
 
-<input type="hidden" id="seenorwhatgelen" value="@ViewBag.seenorwhat" />
-<input type="hidden" id="hamResimID" value="@ViewBag.hamResimID" />
+<input type="hidden" id="seenBackend" value="@ViewBag.seen" />
+<input type="hidden" id="imageID" value="@ViewBag.imageID" />
 <input type="hidden" id="filesCount" value="@ViewBag.filesCount" />
-<input type="hidden" id="imageIndex" value="@ViewBag.imageIndex" />
+<input type="hidden" id="imageNo" value="@ViewBag.imageNo" />
 <div style="position:absolute; top:-8000px">
     <img id="image" src="@ViewBag.path" />
 </div>
 
-@section Styles {
-<style>
-    .secBtn {
-        color: white;
-    }
-        .secBtn:hover {
-            color: white !important;
-        }
-</style>
-}
 
-
-@if(!string.IsNullOrWhiteSpace(ViewBag.hata))
-{ 
+@if (!string.IsNullOrWhiteSpace(ViewBag.hata))
+{
     <span class="text-danger">@ViewBag.hata</span>
 }
 
 <table class="table table-sm table-borderless">
     <tr>
         <td colspan="2" style="border-bottom:1px gray solid; padding-bottom:18px">
-            <span style="cursor:pointer" class="p-2">@(ViewBag.imageIndex) / @ViewBag.filesCount</span>
+            <span style="cursor:pointer" class="p-2">@(ViewBag.imageNo) / @ViewBag.filesCount</span>
             <button class="btn btn-sm btn-secondary" onclick="NavigateBackward()"><< Geri</button>
             <button class="btn btn-sm btn-secondary" onclick="NavigateForward()">İleri >></button>
             <span class="p-2">
-                <select id="seenorwhat" class="form-control-sm">
-                    <option value="0" >İşlenmemişler</option>
+                <select id="seen" class="form-control-sm">
+                    <option value="0">İşlenmemişler</option>
                     <option value="1">İşlenmişler</option>
                     <option value="2">Tamamı</option>
                 </select>
@@ -74,13 +73,13 @@
                     <span style="margin: 4px; margin-right: 10px; cursor: pointer" onclick="CanvasChangeSize(false)">-</span>
                     <span style="margin: 4px; margin-left: 10px; cursor: pointer" onclick="CanvasChangeSize(true)">+</span>
                 </span>
-                <input type="range" id="etiketPaintRange"/>
+                <input type="range"  oninput="LabelPaintRange(this.value)" value="30" step="10" />
             </div>
             <canvas id="canvas"></canvas>
         </td>
     </tr>
 </table>
-    
+
 
 <script>
 
@@ -89,25 +88,25 @@
     var lineWidth = 2;
     var Colors = ["black", "green", "red", "blue", "purple"]
 
-    var imageIndex = 0;
+    var imageNo = 0;
     var filesCount = 0;
     var seenorwhat = 0;
     var gridSize = 128;
     var secimler = [];
-    var hamResimID = 0;
+    var imageID = 0;
     var etiketPaintRange = 0.3;
     var cursor = { col: 0, row: 0 };
 
     $(document).ready(function () {
         filesCount = Number($("#filesCount").val());
-        imageIndex = Number($("#imageIndex").val());
-        hamResimID = Number($("#hamResimID").val());
-        $("#seenorwhat").val($("#seenorwhatgelen").val());
-        GetEtiketler();
+        imageNo = Number($("#imageNo").val());
+        imageID = Number($("#imageID").val());
+        $("#seen").val($("#seenBackend").val());
+        GetLabels();
     });
 
-    function GetEtiketler() {
-        new OzAjax("/Home/GetEtiketler", GET, { hamResimID: hamResimID }, GetEtBasari).Send();
+    function GetLabels() {
+        new OzAjax("/Home/GetEtiketler", GET, { imageID: imageID }, GetEtBasari).Send();
         function GetEtBasari(data) {
             secimler = JSON.parse(data);
             PaintChosenGrids();
@@ -127,6 +126,7 @@
         imageHeight = image.height;
         gridCountX = Math.floor(imageWidth / gridSize);
         gridCountY = Math.floor(imageHeight / gridSize);
+
         cursorindex = 0;
 
         // create canvas
@@ -151,7 +151,7 @@
         DrawRedRect();
         DrawFlyingImage();
     }
-    
+
     function DrawImage() {
         ctx.drawImage(image, 0, 0, imageWidth, imageHeight, 0, 0, canvas.width, canvas.height);
     }
@@ -175,7 +175,7 @@
             ctx.stroke();
         }
     }
-    
+
     function PaintChosenGrids() {
         ctx.globalAlpha = etiketPaintRange;
 
@@ -227,26 +227,26 @@
         flyingCanvas.height = flyingCanvasDesiredWidth;
         DrawFlyingImage();
     }
-    
+
     //___NAVIGATION___//
     function NavigateBackward() {
-        console.log("imageIndex"+imageIndex);
-        imageIndex -= 1;
-        if (imageIndex < 1) {
-            imageIndex = 1;
+        console.log("imageNo" + imageNo);
+        imageNo -= 1;
+        if (imageNo < 1) {
+            imageNo = 1;
             return;
         }
-        console.log("yeni image index"+imageIndex);
-        window.location = "/Home/Index/" + imageIndex;
+        console.log("yeni image index" + imageNo);
+        window.location = "/Home/Index/" + imageNo;
     }
 
     function NavigateForward() {
-        imageIndex += 1;
-        if (imageIndex > filesCount) {
-            imageIndex = filesCount;
+        imageNo += 1;
+        if (imageNo > filesCount) {
+            imageNo = filesCount;
             return;
         }
-        window.location = "/Home/Index/" + imageIndex;
+        window.location = "/Home/Index/" + imageNo;
     }
 
     function CursorIncrease() {
@@ -268,12 +268,12 @@
         UpdateAll();
     });
 
-    
+
 
     function ChooseLabel(choice) {
-        var pack = { imageIndex: imageIndex, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row };
+        var pack = { imageNo: imageNo, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row };
         var packExist = false;
-        for (var i = 0; i < secimler.length; i++) 
+        for (var i = 0; i < secimler.length; i++)
             // pack zaten varsa sadece choice değerini değiştir.. array.push yapma!
             if (secimler[i].cursorCol == pack.cursorCol && secimler[i].cursorRow == pack.cursorRow) {
                 secimler[i].choice = pack.choice;
@@ -293,8 +293,8 @@
     }
 
     function Completed() {
-        
-        new OzAjax("/Home/Tamamlanan", POST, { secimler: secimler, hamResimID: hamResimID  }, KaydetBasari, KaydetHata).Send();
+
+        new OzAjax("/Home/Tamamlanan", POST, { secimler: secimler, imageID: imageID }, KaydetBasari, KaydetHata).Send();
         function KaydetBasari(data) {
             alert(data);
             NavigateForward();
@@ -307,13 +307,14 @@
 
     $("#seenorwhat").change(function () {
         seenorwhat = $(this).val();
-        window.location = "/Home/Index/" + imageIndex + "?seenorwhat=" + seenorwhat;
+        window.location = "/Home/Index/" + imageNo + "?seenorwhat=" + seenorwhat;
     });
 
-    $("#etiketPaintRange").change(function () {
-        etiketPaintRange = $(this).val() / 100.0;
+    function LabelPaintRange(value) {
+
+        etiketPaintRange = value / 100.0;
         UpdateAll();
-    });
+    }
 
-</script>    
+</script>
 

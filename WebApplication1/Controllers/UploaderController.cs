@@ -18,23 +18,23 @@ namespace WebApplication1.Controllers
     public class UploaderController : Controller
     {
         private readonly MyContext db;
-        string fileRoot = "";
+        string rootPath = "";
 
         public UploaderController(MyContext db, IWebHostEnvironment environment)
         {
-            fileRoot = Path.Combine(environment.WebRootPath, "dosyalar");
+            rootPath = Path.Combine(environment.WebRootPath, "dosyalar");
             this.db = db;
         }
 
         public IActionResult Index()
         {
-            return View(db.Proje.ToList());
+            return View(db.Project.ToList());
         }
 
         public IActionResult ListFilesOfProject(int projectID)
         {
-            List<HamResim> resimList = db.HamResim.Include(u => u.Proje).Where(u => u.Proje.ID == projectID).ToList();
-            return PartialView(resimList);
+            List<Photo> photoList = db.Photo.Where(u => u.ProjectID == projectID).ToList();
+            return PartialView(photoList);
         }
 
         [HttpPost]
@@ -60,23 +60,23 @@ namespace WebApplication1.Controllers
                         file.CopyTo(stream);
                         Image orjImage = new Bitmap(stream);
                         Image image1024 = ResizeTo1280w(orjImage);
-                        image1024.Save(Path.Combine(fileRoot, sysname));
+                        image1024.Save(Path.Combine(rootPath, sysname));
 
                         Image thumb = ResizeImage(orjImage, new Size(200,200));
-                        thumb.Save(Path.Combine(fileRoot, "thumbs", sysname));
+                        thumb.Save(Path.Combine(rootPath, "thumbs", sysname));
                     }
 
-                    HamResim resim = new HamResim();
-                    int formProjeID = int.Parse(form["proje"].tooString());
-                    resim.Proje = db.Proje.FirstOrDefault(u => u.ID == formProjeID);
-                    resim.contentType = contentType;
-                    resim.sizekb = lenght / 1024;
-                    resim.orjname = fileName;
-                    resim.extention = Path.GetExtension(fileName);
-                    resim.date = DateTime.Now;
-                    resim.seenOrWhat = SEENORWHAT.undone;
-                    resim.sysname = sysname;
-                    db.Add(resim);
+                    Photo photo = new Photo();
+                    int formProjeID = int.Parse(form["projectID"].tooString());
+                    photo.Project = db.Project.FirstOrDefault(u => u.ID == formProjeID);
+                    photo.contentType = contentType;
+                    photo.sizekb = lenght / 1024;
+                    photo.orjname = fileName;
+                    photo.extention = Path.GetExtension(fileName);
+                    photo.date = DateTime.Now;
+                    photo.completed = false;
+                    photo.sysname = sysname;
+                    db.Add(photo);
                     db.SaveChanges();
                 }
                 catch(Exception e)
@@ -90,25 +90,25 @@ namespace WebApplication1.Controllers
 
         public IActionResult ResmiSil(int id)
         {
-            HamResim hamResim = db.HamResim.FirstOrDefault(u => u.ID == id);
-            if(hamResim != null)
+            Photo photo = db.Photo.FirstOrDefault(u => u.ID == id);
+            if(photo != null)
             {
-                FileInfo fi = new FileInfo(Path.Combine(fileRoot, hamResim.sysname));
+                FileInfo fi = new FileInfo(Path.Combine(rootPath, photo.sysname));
                 if (fi.Exists)
                     fi.Delete();
-                FileInfo ft = new FileInfo(Path.Combine(fileRoot,"thumbs", hamResim.sysname));
+                FileInfo ft = new FileInfo(Path.Combine(rootPath, "thumbs", photo.sysname));
                 if (ft.Exists)
                     ft.Delete();
 
-                db.Remove(hamResim);
+                db.Remove(photo);
                 db.SaveChanges();
             }
-            return Json("silindi!");
+            return Json("Silindi!");
         }
 
         public IActionResult ShowPreview(int id)
         {
-            HamResim r = db.HamResim.FirstOrDefault(u => u.ID == id);
+            Photo r = db.Photo.FirstOrDefault(u => u.ID == id);
             ViewBag.path = Path.Combine("/dosyalar", r.sysname);
             return PartialView();
         }

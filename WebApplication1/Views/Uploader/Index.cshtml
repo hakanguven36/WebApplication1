@@ -1,4 +1,4 @@
-﻿@model IEnumerable<WebApplication1.Models.Proje>
+﻿@model IEnumerable<WebApplication1.Models.Project>
 
 <div class="m-2">
     <h4>Yeni Resim Yükle</h4>
@@ -9,7 +9,7 @@
                 <div class="form-group">
                     <label class="control-label" for="proje"></label>
                     Proje Adı
-                    <select class="form-control" id="proje" name="proje" style="max-width:20em">
+                    <select class="form-control" id="project" name="projectID" style="max-width:20em">
                         @foreach (var item in Model)
                         {
                             <option value="@item.ID">@item.name</option>
@@ -24,25 +24,25 @@
         </div>
     </div>
     <hr />
-    <div id="dosyaList"></div>
+    <div id="fileListDiv"></div>
 </div>
 
 <script>
     var projectID = 0;
 
     $(document).ready(function () {
-        DosyaListele();
+        ListFiles();
     });
 
-    $("#proje").on("change", function () {
-        DosyaListele();
+    $("#project").on("change", function () {
+        ListFiles();
     });
 
-    function DosyaListele() {
-        projectID = Number($("#proje").val());
-        new OzAjax("/Uploader/ListFilesOfProject", GET, { projectID: projectID }, Basari).Send();
-        function Basari(data) {
-            $("#dosyaList").html(data);
+    function ListFiles() {
+        projectID = Number($("#project").val());
+        new OzAjax("/Uploader/ListFilesOfProject", GET, { projectID: projectID }, Successful).Send();
+        function Successful(data) {
+            $("#fileListDiv").html(data);
         }
     }
 

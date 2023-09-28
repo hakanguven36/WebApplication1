@@ -9,7 +9,7 @@ using WebApplication1.Models;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(MyContext))]
-    [Migration("20230924044412_mig_init")]
+    [Migration("20230928223236_mig_init")]
     partial class mig_init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -18,16 +18,13 @@ namespace WebApplication1.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "5.0.17");
 
-            modelBuilder.Entity("WebApplication1.Models.Etiket", b =>
+            modelBuilder.Entity("WebApplication1.Models.Label", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("HamResimID")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("choice")
+                    b.Property<int>("PhotoID")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("cursorCol")
@@ -39,23 +36,29 @@ namespace WebApplication1.Migrations
                     b.Property<int>("cursorSize")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("label")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("ID");
 
-                    b.HasIndex("HamResimID");
+                    b.HasIndex("PhotoID");
 
-                    b.ToTable("Etiket");
+                    b.ToTable("Label");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.HamResim", b =>
+            modelBuilder.Entity("WebApplication1.Models.Photo", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ProjeID")
+                    b.Property<int>("ProjectID")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("UserID")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("completed")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("contentType")
@@ -73,9 +76,6 @@ namespace WebApplication1.Migrations
                     b.Property<string>("orjname")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("seenOrWhat")
-                        .HasColumnType("INTEGER");
-
                     b.Property<double>("sizekb")
                         .HasColumnType("REAL");
 
@@ -84,14 +84,14 @@ namespace WebApplication1.Migrations
 
                     b.HasKey("ID");
 
-                    b.HasIndex("ProjeID");
+                    b.HasIndex("ProjectID");
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("HamResim");
+                    b.ToTable("Photo");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.Proje", b =>
+            modelBuilder.Entity("WebApplication1.Models.Project", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
@@ -102,7 +102,7 @@ namespace WebApplication1.Migrations
 
                     b.HasKey("ID");
 
-                    b.ToTable("Proje");
+                    b.ToTable("Project");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.User", b =>
@@ -133,47 +133,22 @@ namespace WebApplication1.Migrations
                     b.ToTable("User");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.UserSetting", b =>
+            modelBuilder.Entity("WebApplication1.Models.Label", b =>
                 {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("UserID")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("canvasSize")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("seenOrWhat")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ucanCanvasSize")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("UserID");
-
-                    b.ToTable("UserSetting");
-                });
-
-            modelBuilder.Entity("WebApplication1.Models.Etiket", b =>
-                {
-                    b.HasOne("WebApplication1.Models.HamResim", "HamResim")
+                    b.HasOne("WebApplication1.Models.Photo", "Photo")
                         .WithMany()
-                        .HasForeignKey("HamResimID")
+                        .HasForeignKey("PhotoID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("HamResim");
+                    b.Navigation("Photo");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.HamResim", b =>
+            modelBuilder.Entity("WebApplication1.Models.Photo", b =>
                 {
-                    b.HasOne("WebApplication1.Models.Proje", "Proje")
+                    b.HasOne("WebApplication1.Models.Project", "Project")
                         .WithMany()
-                        .HasForeignKey("ProjeID")
+                        .HasForeignKey("ProjectID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -181,18 +156,7 @@ namespace WebApplication1.Migrations
                         .WithMany()
                         .HasForeignKey("UserID");
 
-                    b.Navigation("Proje");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("WebApplication1.Models.UserSetting", b =>
-                {
-                    b.HasOne("WebApplication1.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Project");
 
                     b.Navigation("User");
                 });

@@ -6,12 +6,10 @@ using System.Threading.Tasks;
 
 namespace WebApplication1.Models
 {
-    [Table("Proje")]
-    public class Proje
+    [Table("Project")]
+    public class Project
     {
         public int ID { get; set; }
-
         public string name { get; set; }
-
     }
 }

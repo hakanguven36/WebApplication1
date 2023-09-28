@@ -8,7 +8,7 @@ namespace WebApplication1.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Proje",
+                name: "Project",
                 columns: table => new
                 {
                     ID = table.Column<int>(type: "INTEGER", nullable: false)
@@ -17,7 +17,7 @@ namespace WebApplication1.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Proje", x => x.ID);
+                    table.PrimaryKey("PK_Project", x => x.ID);
                 });
 
             migrationBuilder.CreateTable(
@@ -38,7 +38,7 @@ namespace WebApplication1.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "HamResim",
+                name: "Photo",
                 columns: table => new
                 {
                     ID = table.Column<int>(type: "INTEGER", nullable: false)
@@ -49,22 +49,22 @@ namespace WebApplication1.Migrations
                     contentType = table.Column<string>(type: "TEXT", nullable: true),
                     sizekb = table.Column<double>(type: "REAL", nullable: false),
                     imageFormat = table.Column<string>(type: "TEXT", nullable: true),
-                    seenOrWhat = table.Column<int>(type: "INTEGER", nullable: false),
-                    ProjeID = table.Column<int>(type: "INTEGER", nullable: false),
+                    completed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ProjectID = table.Column<int>(type: "INTEGER", nullable: false),
                     UserID = table.Column<int>(type: "INTEGER", nullable: true),
                     date = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_HamResim", x => x.ID);
+                    table.PrimaryKey("PK_Photo", x => x.ID);
                     table.ForeignKey(
-                        name: "FK_HamResim_Proje_ProjeID",
-                        column: x => x.ProjeID,
-                        principalTable: "Proje",
+                        name: "FK_Photo_Project_ProjectID",
+                        column: x => x.ProjectID,
+                        principalTable: "Project",
                         principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_HamResim_User_UserID",
+                        name: "FK_Photo_User_UserID",
                         column: x => x.UserID,
                         principalTable: "User",
                         principalColumn: "ID",
@@ -72,84 +72,54 @@ namespace WebApplication1.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserSetting",
+                name: "Label",
                 columns: table => new
                 {
                     ID = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    UserID = table.Column<int>(type: "INTEGER", nullable: false),
-                    canvasSize = table.Column<int>(type: "INTEGER", nullable: false),
-                    ucanCanvasSize = table.Column<int>(type: "INTEGER", nullable: false),
-                    seenOrWhat = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserSetting", x => x.ID);
-                    table.ForeignKey(
-                        name: "FK_UserSetting_User_UserID",
-                        column: x => x.UserID,
-                        principalTable: "User",
-                        principalColumn: "ID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Etiket",
-                columns: table => new
-                {
-                    ID = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    HamResimID = table.Column<int>(type: "INTEGER", nullable: false),
-                    choice = table.Column<int>(type: "INTEGER", nullable: false),
+                    label = table.Column<int>(type: "INTEGER", nullable: false),
                     cursorCol = table.Column<int>(type: "INTEGER", nullable: false),
                     cursorRow = table.Column<int>(type: "INTEGER", nullable: false),
-                    cursorSize = table.Column<int>(type: "INTEGER", nullable: false)
+                    cursorSize = table.Column<int>(type: "INTEGER", nullable: false),
+                    PhotoID = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Etiket", x => x.ID);
+                    table.PrimaryKey("PK_Label", x => x.ID);
                     table.ForeignKey(
-                        name: "FK_Etiket_HamResim_HamResimID",
-                        column: x => x.HamResimID,
-                        principalTable: "HamResim",
+                        name: "FK_Label_Photo_PhotoID",
+                        column: x => x.PhotoID,
+                        principalTable: "Photo",
                         principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Etiket_HamResimID",
-                table: "Etiket",
-                column: "HamResimID");
+                name: "IX_Label_PhotoID",
+                table: "Label",
+                column: "PhotoID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_HamResim_ProjeID",
-                table: "HamResim",
-                column: "ProjeID");
+                name: "IX_Photo_ProjectID",
+                table: "Photo",
+                column: "ProjectID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_HamResim_UserID",
-                table: "HamResim",
-                column: "UserID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserSetting_UserID",
-                table: "UserSetting",
+                name: "IX_Photo_UserID",
+                table: "Photo",
                 column: "UserID");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Etiket");
+                name: "Label");
 
             migrationBuilder.DropTable(
-                name: "UserSetting");
+                name: "Photo");
 
             migrationBuilder.DropTable(
-                name: "HamResim");
-
-            migrationBuilder.DropTable(
-                name: "Proje");
+                name: "Project");
 
             migrationBuilder.DropTable(
                 name: "User");

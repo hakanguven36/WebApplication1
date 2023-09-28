@@ -23,7 +23,7 @@ namespace WebApplication1.Controllers
         // GET: Projects
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Proje.ToListAsync());
+            return View(await _context.Project.ToListAsync());
         }
 
         // GET: Projects/Details/5
@@ -34,7 +34,7 @@ namespace WebApplication1.Controllers
                 return NotFound();
             }
 
-            var proje = await _context.Proje
+            var proje = await _context.Project
                 .FirstOrDefaultAsync(m => m.ID == id);
             if (proje == null)
             {
@@ -55,7 +55,7 @@ namespace WebApplication1.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,name")] Proje proje)
+        public async Task<IActionResult> Create([Bind("ID,name")] Project proje)
         {
             if (ModelState.IsValid)
             {
@@ -74,7 +74,7 @@ namespace WebApplication1.Controllers
                 return NotFound();
             }
 
-            var proje = await _context.Proje.FindAsync(id);
+            var proje = await _context.Project.FindAsync(id);
             if (proje == null)
             {
                 return NotFound();
@@ -87,7 +87,7 @@ namespace WebApplication1.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ID,name")] Proje proje)
+        public async Task<IActionResult> Edit(int id, [Bind("ID,name")] Project proje)
         {
             if (id != proje.ID)
             {
@@ -125,7 +125,7 @@ namespace WebApplication1.Controllers
                 return NotFound();
             }
 
-            var proje = await _context.Proje
+            var proje = await _context.Project
                 .FirstOrDefaultAsync(m => m.ID == id);
             if (proje == null)
             {
@@ -140,15 +140,15 @@ namespace WebApplication1.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var proje = await _context.Proje.FindAsync(id);
-            _context.Proje.Remove(proje);
+            var proje = await _context.Project.FindAsync(id);
+            _context.Project.Remove(proje);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool ProjeExists(int id)
         {
-            return _context.Proje.Any(e => e.ID == id);
+            return _context.Project.Any(e => e.ID == id);
         }
     }
 }

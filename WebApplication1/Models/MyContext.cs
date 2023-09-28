@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-//using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore;
 
 
 namespace WebApplication1.Models
@@ -12,16 +6,11 @@ namespace WebApplication1.Models
 	public class MyContext : DbContext
 	{
 		protected override void OnConfiguring(DbContextOptionsBuilder options)
-		{
-			//ConfigurationManager.ConnectionStrings[0].ConnectionString
-			options.UseSqlite("Data Source=Database\\data.db");
-		}
+			=> options.UseSqlite("Data Source=Database\\data.db");
 
 		public DbSet<User> User { get; set; }
-		public DbSet<Etiket> Etiket { get; set; }
-		public DbSet<HamResim> HamResim { get; set; }
-		public DbSet<UserSetting> UserSetting { get; set; }
-        public DbSet<Proje> Proje { get; set; }
-
+        public DbSet<Project> Project { get; set; }
+		public DbSet<Photo> Photo { get; set; }
+		public DbSet<Label> Label { get; set; }
     }
 }

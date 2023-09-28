@@ -1,4 +1,4 @@
-﻿@model IEnumerable<WebApplication1.Models.HamResim>
+﻿@model IEnumerable<WebApplication1.Models.Photo>
 
 Toplam: @Model.Count()
 <table class="table">
@@ -17,7 +17,7 @@ Toplam: @Model.Count()
                 @Html.DisplayNameFor(model => model.sizekb)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.seenOrWhat)
+                @Html.DisplayNameFor(model => model.completed)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.User)
@@ -44,7 +44,7 @@ Toplam: @Model.Count()
                 @Html.DisplayFor(modelItem => item.sizekb)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.seenOrWhat)
+                @Html.DisplayFor(modelItem => item.completed)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.User.username)
@@ -60,7 +60,7 @@ Toplam: @Model.Count()
     </tbody>
 </table>
 
-<div id="priviewDiv" style="display:none; background-color:gray" >elma</div>
+<div id="previewDiv" style="display:none; background-color:gray" >elma</div>
 
 <script>
     var posX = 0;
@@ -72,14 +72,14 @@ Toplam: @Model.Count()
         posY = offset.top;
         posX = $(dom).css("width");
 
-        $("#priviewDiv").css({ "display": "table-cell", "position": "absolute", "top": posY, "left": posX, "z-index":"10" });
+        $("#previewDiv").css({ "display": "table-cell", "position": "absolute", "top": posY, "left": posX, "z-index":"10" });
         
         new OzAjax("/Uploader/ShowPreview", GET, { id: id }, PreviewBasari).Send();
         function PreviewBasari(data) {
-            $("#priviewDiv").html(data);
+            $("#previewDiv").html(data);
         }
     }
     function RemovePreveiw() {
-        $("#priviewDiv").css({"display": "none"});
+        $("#previewDiv").css({"display": "none"});
     }
 </script>

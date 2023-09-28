@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using WebApplication1.Models;
-using System.Drawing;
-using System.Drawing.Drawing2D;
 using WebApplication1.Araclar;
 using WebApplication1.ViewModels;
 
@@ -19,122 +15,113 @@ namespace WebApplication1.Controllers
     public class HomeController : Controller
     {
         private readonly MyContext db;
-        string fileRoot = "";
+        private readonly string rootPath;
+        
 
-        public HomeController(MyContext db, IWebHostEnvironment environment)
+        public HomeController(MyContext db)
         {
-            fileRoot = Path.Combine(environment.WebRootPath, "dosyalar");
+            rootPath = "/dosyalar";
             this.db = db;
         }
 
-        public IActionResult Index(int? id, int? seenorwhat)
+        public IActionResult Index(int? _imageNo, int? _seen)
         {
-            string hata = "";
-            int skipint = id ?? 1;
-            skipint--;
-            int filesCount = db.HamResim.Count();
+            int seen = _seen ?? 0;
+            seen = Math.Clamp(seen, 0, 2);
+            ViewBag.seen = seen;
+
+            int imageNo = _imageNo ?? 1;
+            
+            int filesCount = db.Photo.Count();
             if (filesCount == 0)
             {
-                hata += "Veritabanında resim yok! ";
-                ViewBag.hata = hata;
-                return View();
-            }
-            if(skipint+1 > filesCount)
-            {
-                hata += "öyle bir resim yok! ";
-                ViewBag.hata = hata;
+                ViewBag.hata = "Veritabanında resim yok!";
                 return View();
             }
 
-            if (seenorwhat != null)
-            {
-                HttpContext.Session.SetInt32("seenorwhat", seenorwhat??0);
-                skipint = 0;
-            }
-
-            int sow = HttpContext.Session.GetInt32("seenorwhat")??0;
-            HamResim resim = new HamResim();
-            switch (sow)
+            Photo resim = new Photo();
+            switch (seen)
             {
                 case 0:
-                    filesCount = db.HamResim.Where(u => u.seenOrWhat == SEENORWHAT.undone).Count();
-                    resim = db.HamResim.Where(u => u.seenOrWhat == SEENORWHAT.undone).Skip(skipint).FirstOrDefault();
+                    filesCount = db.Photo.Where(u => u.completed == false).Count();
+                    imageNo = Math.Clamp(imageNo, 1, filesCount);
+                    resim = db.Photo.Where(u => u.completed == false).Skip(imageNo - 1).FirstOrDefault();
                     break;
                 case 1:
-                    filesCount = db.HamResim.Where(u => u.seenOrWhat == SEENORWHAT.done).Count();
-                    resim = db.HamResim.Where(u => u.seenOrWhat == SEENORWHAT.done).Skip(skipint).FirstOrDefault();
+                    filesCount = db.Photo.Where(u => u.completed == true).Count();
+                    imageNo = Math.Clamp(imageNo, 1, filesCount);
+                    resim = db.Photo.Where(u => u.completed == true).Skip(imageNo - 1).FirstOrDefault();
                     break;
                 default:
-                    resim = db.HamResim.Skip(skipint).FirstOrDefault();
+                    imageNo = Math.Clamp(imageNo, 1, filesCount);
+                    resim = db.Photo.Skip(imageNo-1).FirstOrDefault();
                     break;
             }
 
 
-            ViewBag.imageIndex = skipint + 1;
+            ViewBag.imageNo = imageNo;
             ViewBag.filesCount = filesCount;
-            ViewBag.seenorwhat = HttpContext.Session.GetInt32("seenorwhat")??0;
 
             if (resim == null)
             {
-                hata += "öyle bir resim yok! ";
-                ViewBag.hata = hata;
+                ViewBag.hata = "Öyle bir resim yok!";
                 return View();
             }
             else
             {
-                ViewBag.path = Path.Combine("/dosyalar", resim.sysname);
-                ViewBag.hamResimID = resim.ID;
+                ViewBag.path = Path.Combine(rootPath, resim.sysname);
+                ViewBag.imageID = resim.ID;
             }
             return View();
         }
 
-        public IActionResult GetEtiketler(int hamResimID)
+        public IActionResult GetEtiketler(int FotoID)
         {
-            List<SecimlerViewModel> secimler = new List<SecimlerViewModel>();
-            foreach (var item in db.Etiket.Where(u => u.HamResimID == hamResimID).ToList())
+            List<LabelViewModel> labels = new List<LabelViewModel>();
+            foreach (var item in db.Label.Where(u => u.PhotoID == FotoID).ToList())
             {
-                secimler.Add(new SecimlerViewModel() { choice = item.choice, cursorCol = item.cursorCol, cursorRow = item.cursorRow, cursorSize = item.cursorSize });
+                labels.Add(new LabelViewModel() { label = item.label, cursorCol = item.cursorCol, cursorRow = item.cursorRow, cursorSize = item.cursorSize });
             } 
-            return Json(secimler);
+            return Json(labels);
         }
 
         [HttpPost]
-        public IActionResult Tamamlanan(List<SecimlerViewModel> secimler, int hamResimID)
+        public IActionResult Tamamlanan(List<LabelViewModel> labels)
         {
             try
             {
-                HamResim resim = db.HamResim.FirstOrDefault(u => u.ID == hamResimID);
+                Photo foto = db.Photo.FirstOrDefault(u => u.ID == labels.FirstOrDefault().fotoID);
 
-                List<Etiket> willDelEtiketList = db.Etiket.Where(u => u.HamResimID == hamResimID).ToList();
-                if (willDelEtiketList.Count() > 0)
+                List<Label> previousListToDelete = db.Label.Where(u => u.PhotoID == foto.ID).ToList();
+                if (previousListToDelete.Count() > 0)
                 {
-                    db.RemoveRange(willDelEtiketList);
+                    db.RemoveRange(previousListToDelete);
                     db.SaveChanges();
                 }
 
-                if (secimler.Count > 0)
+                if (labels.Count > 0)
                 {
-                    resim.seenOrWhat = SEENORWHAT.done;
+                    foto.completed = true;
 
-                    foreach (var item in secimler)
+                    foreach (var item in labels)
                     {
-                        Etiket etiket = new Etiket();
-                        etiket.choice = item.choice;
-                        etiket.cursorCol = item.cursorCol;
-                        etiket.cursorRow = item.cursorRow;
-                        etiket.HamResim = resim;
-                        etiket.cursorSize = item.cursorSize;
-                        db.Add(etiket);
+                        Label label = new Label();
+                        label.Photo = foto;
+                        label.label = item.label;
+                        label.cursorCol = item.cursorCol;
+                        label.cursorRow = item.cursorRow;
+                        label.cursorSize = item.cursorSize;
+                        db.Add(label);
                         db.SaveChanges();
                     }
                 }
                 else
                 {
-                    resim.seenOrWhat = SEENORWHAT.undone;                    
+                    foto.completed = false;
                 }
-                db.Update(resim);
+                db.Update(foto);
                 db.SaveChanges();
-                return Json("tamam");
+                return Json("Tamam.");
             }
             catch (Exception e)
             {

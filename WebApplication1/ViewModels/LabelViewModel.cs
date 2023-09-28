@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 
 namespace WebApplication1.ViewModels
 {
-    public class SecimlerViewModel
+    public class LabelViewModel
     {
-        public int choice { get; set; }
+        public int fotoID { get; set; }
+        public int label { get; set; }
         public int cursorCol { get; set; }
         public int cursorRow { get; set; }
         public int cursorSize { get; set; }
