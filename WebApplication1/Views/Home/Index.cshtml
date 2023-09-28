@@ -49,10 +49,10 @@
     </tr>
     <tr>
         <td colspan="2" style="padding-top:18px">
-            <button class="btn secBtn" onclick="ChooseClass(0)" style="background-color:darkslategray">Toprak</button>
-            <button class="btn secBtn" onclick="ChooseClass(1)" style="background-color:darkgreen">Kültür</button>
-            <button class="btn secBtn" onclick="ChooseClass(2)" style="background-color:orangered">YabancıOt</button>
-            <button class="btn secBtn" onclick="ChooseClass(3)" style="background-color:royalblue">%50 Kültür+Yabancı</button>
+            <button class="btn secBtn" onclick="ChooseLabel(0)" style="background-color:darkslategray">Toprak</button>
+            <button class="btn secBtn" onclick="ChooseLabel(1)" style="background-color:darkgreen">Kültür</button>
+            <button class="btn secBtn" onclick="ChooseLabel(2)" style="background-color:orangered">YabancıOt</button>
+            <button class="btn secBtn" onclick="ChooseLabel(3)" style="background-color:royalblue">%50 Kültür+Yabancı</button>
             &nbsp;&nbsp;||&nbsp;&nbsp;
             <button class="btn btn-sm secBtn" onclick="ClearClasses()" style="background-color:black">Tümünü Temizle!</button>
         </td>
@@ -83,41 +83,51 @@
     
 
 <script>
-    var gridSize = 128;
-    var lineWidth = 2;
+
     var canvasDesiredWidth = 1000;
     var flyingCanvasDesiredWidth = 600;
+    var lineWidth = 2;
+    var Colors = ["black", "green", "red", "blue", "purple"]
+
+    var imageIndex = 0;
+    var filesCount = 0;
     var seenorwhat = 0;
-    var hamResimID = Number($("#hamResimID").val());
+    var gridSize = 128;
+    var secimler = [];
+    var hamResimID = 0;
     var etiketPaintRange = 0.3;
-    cursor = { col: 0, row: 0 };
+    var cursor = { col: 0, row: 0 };
 
     $(document).ready(function () {
+        filesCount = Number($("#filesCount").val());
+        imageIndex = Number($("#imageIndex").val());
+        hamResimID = Number($("#hamResimID").val());
         $("#seenorwhat").val($("#seenorwhatgelen").val());
         GetEtiketler();
     });
 
-    
+    function GetEtiketler() {
+        new OzAjax("/Home/GetEtiketler", GET, { hamResimID: hamResimID }, GetEtBasari).Send();
+        function GetEtBasari(data) {
+            secimler = JSON.parse(data);
+            PaintChosenGrids();
+        }
+    }
 
-    $("#seenorwhat").change(function () {
-        seenorwhat = $(this).val();
-        window.location = "/Home/Index/" + imageIndex +"?seenorwhat=" + seenorwhat;
-    })
-
+    //___CANVAS___//
     // Get image Info
     var image, imageWidth, imageHeight, gridCountX, gridCountY, cursorindex;
-
     // create canvas
     var canvas, ctx, percentage, cGridSize, flyingCanvas, ctx2;
 
     $("#image").on("load", function () {
         // Get image Info
-        cursorindex = 0;
         image = document.getElementById("image");
         imageWidth = image.width; // should be 1280
         imageHeight = image.height;
         gridCountX = Math.floor(imageWidth / gridSize);
         gridCountY = Math.floor(imageHeight / gridSize);
+        cursorindex = 0;
 
         // create canvas
         canvas = document.getElementById("canvas");
@@ -125,7 +135,6 @@
         percentage = imageWidth / imageHeight;
         canvas.width = canvasDesiredWidth;
         canvas.height = canvas.width / percentage;
-        cGridSize = gridSize * (canvasDesiredWidth / imageWidth);
 
         flyingCanvas = document.getElementById("flyingCanvas");
         ctx2 = flyingCanvas.getContext("2d");
@@ -135,7 +144,6 @@
         UpdateAll();
     });
 
-
     function UpdateAll() {
         DrawImage();
         DrawGrid();
@@ -143,27 +151,7 @@
         DrawRedRect();
         DrawFlyingImage();
     }
-
-    function CanvasChangeSize(increase) {
-        if (increase)
-            canvasDesiredWidth += 50;
-        else
-            canvasDesiredWidth -= 50;
-        canvasDesiredWidth = canvasDesiredWidth < 200 ? 200 : canvasDesiredWidth;
-        canvas.width = canvasDesiredWidth;
-        canvas.height = canvas.width / percentage;
-        UpdateAll();
-    }
-    function FlyingCanvasChangeSize(increase) {
-        if (increase)
-            flyingCanvasDesiredWidth += 50;
-        else
-            flyingCanvasDesiredWidth -= 50;
-        flyingCanvasDesiredWidth = flyingCanvasDesiredWidth < 200 ? 200 : flyingCanvasDesiredWidth;
-        flyingCanvas.width = flyingCanvasDesiredWidth;
-        flyingCanvas.height = flyingCanvasDesiredWidth;
-        DrawFlyingImage();
-    }
+    
     function DrawImage() {
         ctx.drawImage(image, 0, 0, imageWidth, imageHeight, 0, 0, canvas.width, canvas.height);
     }
@@ -187,83 +175,7 @@
             ctx.stroke();
         }
     }
-    function DrawRedRect() {
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "red";
-        ctx.beginPath();
-        ctx.rect(cursor.col * cGridSize, cursor.row * cGridSize, cGridSize, cGridSize);
-        ctx.stroke();
-    }
-    function DrawFlyingImage() {
-        ctx2.drawImage(image, cursor.col * gridSize, cursor.row * gridSize, gridSize, gridSize, 0, 0, flyingCanvas.width, flyingCanvas.height);
-    }
-
-
-    var secimler = [];
-    var filesCount = Number($("#filesCount").val());
-    var imageIndex = Number($("#imageIndex").val());
-
-    function NavigateBackward() {
-        console.log("imageIndex"+imageIndex);
-        imageIndex -= 1;
-        if (imageIndex < 1) {
-            imageIndex = 1;
-            return;
-        }
-        console.log("yeni image index"+imageIndex);
-        window.location = "/Home/Index/" + imageIndex;
-    }
-    function NavigateForward() {
-        imageIndex += 1;
-        if (imageIndex > filesCount) {
-            imageIndex = filesCount;
-            return;
-        }
-        window.location = "/Home/Index/" + imageIndex;
-    }
-
-    function ChooseClass(choice) {
-        var pack = { imageIndex: imageIndex, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row };
-        var packExist = false;
-        for (var i = 0; i < secimler.length; i++) {
-            // pack zaten varsa sadece choice değerini değiştir.. array.push yapma!
-            if (secimler[i].cursorCol == pack.cursorCol && secimler[i].cursorRow == pack.cursorRow) {
-                secimler[i].choice = pack.choice;
-                packExist = true;
-            }
-        }
-
-        if (!packExist) {
-            secimler.push({ choice: choice, cursorCol: cursor.col, cursorRow: cursor.row, cursorSize: gridSize });
-        }
-
-        CursorIncrease();
-    }
-
-    function GetEtiketler() {
-        new OzAjax("/Home/GetEtiketler", GET, { hamResimID: hamResimID }, GetEtBasari).Send();
-        function GetEtBasari(data) {
-            secimler = JSON.parse(data);
-            PaintChosenGrids();
-        }
-    }
-
-    function CursorIncrease() {
-        cursorindex = gridCountX * cursor.row + cursor.col;
-        cursorindex++;
-        if (cursorindex > gridCountX * gridCountY - 1)
-            cursorindex = 0;
-
-        ArrangeCursorPosition();
-    }
-    function ArrangeCursorPosition() {
-        cursor.row = Math.floor(cursorindex / gridCountX);
-        cursor.col = cursorindex - (cursor.row * gridCountX);
-
-        UpdateAll();
-    }
-
-    var Colors = ["black", "green", "red", "blue", "purple"]
+    
     function PaintChosenGrids() {
         ctx.globalAlpha = etiketPaintRange;
 
@@ -282,12 +194,98 @@
         ctx.globalAlpha = 1.0;
     }
 
+    function DrawRedRect() {
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "red";
+        ctx.beginPath();
+        ctx.rect(cursor.col * cGridSize, cursor.row * cGridSize, cGridSize, cGridSize);
+        ctx.stroke();
+    }
+
+    function DrawFlyingImage() {
+        ctx2.drawImage(image, cursor.col * gridSize, cursor.row * gridSize, gridSize, gridSize, 0, 0, flyingCanvas.width, flyingCanvas.height);
+    }
+
+
+    function CanvasChangeSize(increase) {
+        if (increase)
+            canvasDesiredWidth += 50;
+        else
+            canvasDesiredWidth -= 50;
+        canvasDesiredWidth = canvasDesiredWidth < 200 ? 200 : canvasDesiredWidth;
+        canvas.width = canvasDesiredWidth;
+        canvas.height = canvas.width / percentage;
+        UpdateAll();
+    }
+    function FlyingCanvasChangeSize(increase) {
+        if (increase)
+            flyingCanvasDesiredWidth += 50;
+        else
+            flyingCanvasDesiredWidth -= 50;
+        flyingCanvasDesiredWidth = flyingCanvasDesiredWidth < 200 ? 200 : flyingCanvasDesiredWidth;
+        flyingCanvas.width = flyingCanvasDesiredWidth;
+        flyingCanvas.height = flyingCanvasDesiredWidth;
+        DrawFlyingImage();
+    }
+    
+    //___NAVIGATION___//
+    function NavigateBackward() {
+        console.log("imageIndex"+imageIndex);
+        imageIndex -= 1;
+        if (imageIndex < 1) {
+            imageIndex = 1;
+            return;
+        }
+        console.log("yeni image index"+imageIndex);
+        window.location = "/Home/Index/" + imageIndex;
+    }
+
+    function NavigateForward() {
+        imageIndex += 1;
+        if (imageIndex > filesCount) {
+            imageIndex = filesCount;
+            return;
+        }
+        window.location = "/Home/Index/" + imageIndex;
+    }
+
+    function CursorIncrease() {
+        cursorindex = gridCountX * cursor.row + cursor.col;
+        cursorindex++;
+        if (cursorindex > gridCountX * gridCountY - 1)
+            cursorindex = 0;
+
+        cursor.row = Math.floor(cursorindex / gridCountX);
+        cursor.col = cursorindex - (cursor.row * gridCountX);
+
+        UpdateAll();
+    }
+
     $("#canvas").click(function (e) {
         cursor.col = Math.floor(e.offsetX / cGridSize);
         cursor.row = Math.floor(e.offsetY / cGridSize);
         cursor.row = (cursor.row > gridCountY - 1) ? gridCountY - 1 : cursor.row;
         UpdateAll();
-    })
+    });
+
+    
+
+    function ChooseLabel(choice) {
+        var pack = { imageIndex: imageIndex, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row };
+        var packExist = false;
+        for (var i = 0; i < secimler.length; i++) 
+            // pack zaten varsa sadece choice değerini değiştir.. array.push yapma!
+            if (secimler[i].cursorCol == pack.cursorCol && secimler[i].cursorRow == pack.cursorRow) {
+                secimler[i].choice = pack.choice;
+                packExist = true;
+            }
+
+        if (!packExist) {
+            secimler.push({ choice: choice, cursorCol: cursor.col, cursorRow: cursor.row, cursorSize: gridSize });
+        }
+
+        CursorIncrease();
+    }
 
     function ClearClasses() {
         secimler = [];
@@ -299,11 +297,18 @@
         new OzAjax("/Home/Tamamlanan", POST, { secimler: secimler, hamResimID: hamResimID  }, KaydetBasari, KaydetHata).Send();
         function KaydetBasari(data) {
             alert(data);
+            NavigateForward();
         }
         function KaydetHata(error) {
             alert(error);
         }
     }
+
+
+    $("#seenorwhat").change(function () {
+        seenorwhat = $(this).val();
+        window.location = "/Home/Index/" + imageIndex + "?seenorwhat=" + seenorwhat;
+    });
 
     $("#etiketPaintRange").change(function () {
         etiketPaintRange = $(this).val() / 100.0;
