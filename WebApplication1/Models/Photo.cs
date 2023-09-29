@@ -30,10 +30,6 @@ namespace WebApplication1.Models
         public int ProjectID { get; set; }
         public Project Project { get; set; }
 
-        [ForeignKey(nameof(User))]
-        public int? UserID { get; set; }
-        public User User { get; set; }        
-
         public DateTime date { get; set; }
     }
 }

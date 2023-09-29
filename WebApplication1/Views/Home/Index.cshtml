@@ -316,5 +316,23 @@
         UpdateAll();
     }
 
+    class Label {
+        constructor(label, posX, posY, wid, hei, PhotoID) {
+            this.label = label;
+            this.posX = posX;
+            this.posY = posY;
+            this.wid = wid;
+            this.hei = hei
+            this.PhotoID = PhotoID;
+        }
+        Stringify() {
+            return JSON.stringify(this);
+        }
+        IsEqual(someLabel) {
+            return JSON.stringify(someLabel) == JSON.stringify(this);
+        }
+    }
+    var label = new Label();
+    console.log('${label.posX}')
 </script>
 

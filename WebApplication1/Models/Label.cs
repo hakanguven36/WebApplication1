@@ -12,12 +12,17 @@ namespace WebApplication1.Models
         public int ID { get; set; }
 
         public int label { get; set; }
-        public int cursorCol { get; set; }
-        public int cursorRow { get; set; }
-        public int cursorSize { get; set; }
+        public int posX { get; set; }
+        public int posY { get; set; }
+        public int wid { get; set; }
+        public int hei { get; set; }
 
         [ForeignKey(nameof(Photo))]
         public int PhotoID { get; set; }
         public Photo Photo { get; set; }
+
+        [ForeignKey(nameof(User))]
+        public int UserID { get; set; }
+        public User User { get; set; }
     }
 }
