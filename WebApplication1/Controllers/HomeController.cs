@@ -58,7 +58,6 @@ namespace WebApplication1.Controllers
                     break;
             }
 
-
             ViewBag.imageNo = imageNo;
             ViewBag.filesCount = filesCount;
 
@@ -75,51 +74,45 @@ namespace WebApplication1.Controllers
             return View();
         }
 
-        public IActionResult GetEtiketler(int FotoID)
-        {
-            List<LabelViewModel> labels = new List<LabelViewModel>();
-            foreach (var item in db.Label.Where(u => u.PhotoID == FotoID).ToList())
-            {
-                labels.Add(new LabelViewModel() { label = item.label, cursorCol = item.cursorCol, cursorRow = item.cursorRow, cursorSize = item.cursorSize });
-            } 
-            return Json(labels);
-        }
+
+        [HttpGet]
+        public IActionResult GetLabels(int FotoID) =>
+            Json(db.Label.Where(u => u.PhotoID == FotoID).ToList());
+        
 
         [HttpPost]
-        public IActionResult Tamamlanan(List<LabelViewModel> labels)
+        public IActionResult SetLabels(List<Label> labelList)
         {
             try
             {
-                Photo foto = db.Photo.FirstOrDefault(u => u.ID == labels.FirstOrDefault().fotoID);
+                User currentUser = CurrentUser();
+                if (currentUser == null)
+                    throw new Exception("Kullanıcı değilsiniz!");
 
-                List<Label> previousListToDelete = db.Label.Where(u => u.PhotoID == foto.ID).ToList();
-                if (previousListToDelete.Count() > 0)
+                int photoID = labelList.FirstOrDefault().PhotoID;
+
+                if (db.Label.Any(u => u.PhotoID == photoID))
                 {
+                    var previousListToDelete = db.Label.Where(u => u.PhotoID == photoID);
                     db.RemoveRange(previousListToDelete);
                     db.SaveChanges();
                 }
 
-                if (labels.Count > 0)
-                {
-                    foto.completed = true;
+                Photo photo = db.Photo.FirstOrDefault(u => u.ID == photoID);
 
-                    foreach (var item in labels)
-                    {
-                        Label label = new Label();
-                        label.Photo = foto;
-                        label.label = item.label;
-                        label.cursorCol = item.cursorCol;
-                        label.cursorRow = item.cursorRow;
-                        label.cursorSize = item.cursorSize;
-                        db.Add(label);
-                        db.SaveChanges();
-                    }
+                if (labelList.Any())
+                {
+                    labelList.ForEach(u => u.UserID = currentUser.ID);
+                    db.AddRange(labelList);
+                    db.SaveChanges();
+
+                    photo.completed = true;
                 }
                 else
                 {
-                    foto.completed = false;
+                    photo.completed = false;
                 }
-                db.Update(foto);
+                db.Update(photo);
                 db.SaveChanges();
                 return Json("Tamam.");
             }
@@ -129,6 +122,12 @@ namespace WebApplication1.Controllers
             }
         }
 
+
+        private User CurrentUser()
+        {
+            User user = HttpContext.Session.GetObject<User>("user");
+            return user;
+        }
 
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

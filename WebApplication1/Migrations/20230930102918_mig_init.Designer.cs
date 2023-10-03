@@ -9,7 +9,7 @@ using WebApplication1.Models;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(MyContext))]
-    [Migration("20230928223236_mig_init")]
+    [Migration("20230930102918_mig_init")]
     partial class mig_init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,21 +27,29 @@ namespace WebApplication1.Migrations
                     b.Property<int>("PhotoID")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("cursorCol")
+                    b.Property<int>("UserID")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("cursorRow")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("cursorSize")
+                    b.Property<int>("hei")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("label")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("posX")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("posY")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("wid")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("ID");
 
                     b.HasIndex("PhotoID");
+
+                    b.HasIndex("UserID");
 
                     b.ToTable("Label");
                 });
@@ -53,9 +61,6 @@ namespace WebApplication1.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ProjectID")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("UserID")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("completed")
@@ -85,8 +90,6 @@ namespace WebApplication1.Migrations
                     b.HasKey("ID");
 
                     b.HasIndex("ProjectID");
-
-                    b.HasIndex("UserID");
 
                     b.ToTable("Photo");
                 });
@@ -141,7 +144,15 @@ namespace WebApplication1.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("WebApplication1.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Photo");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Photo", b =>
@@ -152,13 +163,7 @@ namespace WebApplication1.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WebApplication1.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID");
-
                     b.Navigation("Project");
-
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

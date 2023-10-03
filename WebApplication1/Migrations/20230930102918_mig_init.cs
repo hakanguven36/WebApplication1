@@ -51,7 +51,6 @@ namespace WebApplication1.Migrations
                     imageFormat = table.Column<string>(type: "TEXT", nullable: true),
                     completed = table.Column<bool>(type: "INTEGER", nullable: false),
                     ProjectID = table.Column<int>(type: "INTEGER", nullable: false),
-                    UserID = table.Column<int>(type: "INTEGER", nullable: true),
                     date = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
@@ -63,12 +62,6 @@ namespace WebApplication1.Migrations
                         principalTable: "Project",
                         principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Photo_User_UserID",
-                        column: x => x.UserID,
-                        principalTable: "User",
-                        principalColumn: "ID",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -78,10 +71,12 @@ namespace WebApplication1.Migrations
                     ID = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     label = table.Column<int>(type: "INTEGER", nullable: false),
-                    cursorCol = table.Column<int>(type: "INTEGER", nullable: false),
-                    cursorRow = table.Column<int>(type: "INTEGER", nullable: false),
-                    cursorSize = table.Column<int>(type: "INTEGER", nullable: false),
-                    PhotoID = table.Column<int>(type: "INTEGER", nullable: false)
+                    posX = table.Column<int>(type: "INTEGER", nullable: false),
+                    posY = table.Column<int>(type: "INTEGER", nullable: false),
+                    wid = table.Column<int>(type: "INTEGER", nullable: false),
+                    hei = table.Column<int>(type: "INTEGER", nullable: false),
+                    PhotoID = table.Column<int>(type: "INTEGER", nullable: false),
+                    UserID = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -92,6 +87,12 @@ namespace WebApplication1.Migrations
                         principalTable: "Photo",
                         principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Label_User_UserID",
+                        column: x => x.UserID,
+                        principalTable: "User",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -100,14 +101,14 @@ namespace WebApplication1.Migrations
                 column: "PhotoID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Label_UserID",
+                table: "Label",
+                column: "UserID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Photo_ProjectID",
                 table: "Photo",
                 column: "ProjectID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Photo_UserID",
-                table: "Photo",
-                column: "UserID");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -119,10 +120,10 @@ namespace WebApplication1.Migrations
                 name: "Photo");
 
             migrationBuilder.DropTable(
-                name: "Project");
+                name: "User");
 
             migrationBuilder.DropTable(
-                name: "User");
+                name: "Project");
         }
     }
 }

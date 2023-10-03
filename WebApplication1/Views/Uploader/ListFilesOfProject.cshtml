@@ -20,9 +20,6 @@ Toplam: @Model.Count()
                 @Html.DisplayNameFor(model => model.completed)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.User)
-            </th>
-            <th>
                 @Html.DisplayNameFor(model => model.date)
             </th>
             <th></th>
@@ -45,9 +42,6 @@ Toplam: @Model.Count()
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.completed)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.User.username)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.date)

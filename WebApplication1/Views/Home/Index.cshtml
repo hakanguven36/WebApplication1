@@ -9,22 +9,20 @@
         }
             .secBtn:hover {
                 color: white !important;
-            }
+            }        
     </style>
 }
+<img id="image" src="@ViewBag.path" style="display:none" />
 
 <input type="hidden" id="seenBackend" value="@ViewBag.seen" />
 <input type="hidden" id="imageID" value="@ViewBag.imageID" />
 <input type="hidden" id="filesCount" value="@ViewBag.filesCount" />
 <input type="hidden" id="imageNo" value="@ViewBag.imageNo" />
-<div style="position:absolute; top:-8000px">
-    <img id="image" src="@ViewBag.path" />
-</div>
 
 
 @if (!string.IsNullOrWhiteSpace(ViewBag.hata))
 {
-    <span class="text-danger">@ViewBag.hata</span>
+    <span class="text-danger">HATA: @ViewBag.hata</span>
 }
 
 <table class="table table-sm table-borderless">
@@ -43,7 +41,7 @@
             <span class="p-2"> || </span>
             <button class="btn btn-sm btn-success" onclick="Completed()"> Etiketleri Kaydet </button>
             <span class="p-2"> || </span>
-            <button class="btn btn-sm btn-outline-danger" onclick="ResmiSil()"> resmi sil </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="DeletePhoto()"> Resmi Sil </button>
         </td>
     </tr>
     <tr>
@@ -64,7 +62,9 @@
                     <span style="margin: 4px; margin-left: 10px; cursor: pointer" onclick="FlyingCanvasChangeSize(true)">+</span>
                 </span>
             </div>
-            <canvas id="flyingCanvas"></canvas>
+            <span>
+                <canvas id="manvas"></canvas>
+            </span>
         </td>
 
         <td style="vertical-align:top">
@@ -73,249 +73,44 @@
                     <span style="margin: 4px; margin-right: 10px; cursor: pointer" onclick="CanvasChangeSize(false)">-</span>
                     <span style="margin: 4px; margin-left: 10px; cursor: pointer" onclick="CanvasChangeSize(true)">+</span>
                 </span>
-                <input type="range"  oninput="LabelPaintRange(this.value)" value="30" step="10" />
+                <span class="ml-4">
+                    Opacity:
+                    <input type="range" oninput="LabelPaintRange(this.value)" value="30" step="10" />
+                </span>
+                <span class="ml-4">
+                    Grid:
+                    <span class="btn-group-sm">
+                        <button class="btn btn-outline-dark">#128</button>
+                        <button class="btn btn-outline-dark">#320</button>
+                        <button class="btn btn-outline-dark">#640</button>
+                        <button class="btn btn-outline-dark">#1280</button>
+                        -
+                        <button class="btn btn-outline-primary">FreeDraw</button>
+                    </span>
+                </span>
             </div>
-            <canvas id="canvas"></canvas>
+            <span>
+                <canvas id="canvas"></canvas>
+            </span>
         </td>
     </tr>
 </table>
 
-
 <script>
 
-    var canvasDesiredWidth = 1000;
-    var flyingCanvasDesiredWidth = 600;
-    var lineWidth = 2;
-    var Colors = ["black", "green", "red", "blue", "purple"]
-
-    var imageNo = 0;
-    var filesCount = 0;
-    var seenorwhat = 0;
-    var gridSize = 128;
-    var secimler = [];
-    var imageID = 0;
-    var etiketPaintRange = 0.3;
-    var cursor = { col: 0, row: 0 };
-
-    $(document).ready(function () {
-        filesCount = Number($("#filesCount").val());
-        imageNo = Number($("#imageNo").val());
-        imageID = Number($("#imageID").val());
-        $("#seen").val($("#seenBackend").val());
-        GetLabels();
-    });
-
-    function GetLabels() {
-        new OzAjax("/Home/GetEtiketler", GET, { imageID: imageID }, GetEtBasari).Send();
-        function GetEtBasari(data) {
-            secimler = JSON.parse(data);
-            PaintChosenGrids();
-        }
-    }
-
-    //___CANVAS___//
-    // Get image Info
-    var image, imageWidth, imageHeight, gridCountX, gridCountY, cursorindex;
-    // create canvas
-    var canvas, ctx, percentage, cGridSize, flyingCanvas, ctx2;
-
-    $("#image").on("load", function () {
-        // Get image Info
-        image = document.getElementById("image");
-        imageWidth = image.width; // should be 1280
-        imageHeight = image.height;
-        gridCountX = Math.floor(imageWidth / gridSize);
-        gridCountY = Math.floor(imageHeight / gridSize);
-
-        cursorindex = 0;
-
-        // create canvas
-        canvas = document.getElementById("canvas");
-        ctx = canvas.getContext("2d");
-        percentage = imageWidth / imageHeight;
-        canvas.width = canvasDesiredWidth;
-        canvas.height = canvas.width / percentage;
-
-        flyingCanvas = document.getElementById("flyingCanvas");
-        ctx2 = flyingCanvas.getContext("2d");
-        flyingCanvas.width = flyingCanvasDesiredWidth;
-        flyingCanvas.height = flyingCanvasDesiredWidth;
-
-        UpdateAll();
-    });
-
-    function UpdateAll() {
-        DrawImage();
-        DrawGrid();
-        PaintChosenGrids();
-        DrawRedRect();
-        DrawFlyingImage();
-    }
-
-    function DrawImage() {
-        ctx.drawImage(image, 0, 0, imageWidth, imageHeight, 0, 0, canvas.width, canvas.height);
-    }
-    function DrawGrid() {
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = lineWidth;
-
-        // fixing cGridSize value
-        cGridSize = gridSize * (canvasDesiredWidth / imageWidth);
-
-        // vertical lines
-        for (var i = 0; i <= gridCountX; i++) {
-            ctx.moveTo(i * cGridSize, 0);
-            ctx.lineTo(i * cGridSize, gridCountY * cGridSize);
-            ctx.stroke();
-        }
-        // horizontal lines
-        for (var i = 0; i <= gridCountY; i++) {
-            ctx.moveTo(0, i * cGridSize);
-            ctx.lineTo(gridCountX * cGridSize, i * cGridSize);
-            ctx.stroke();
-        }
-    }
-
-    function PaintChosenGrids() {
-        ctx.globalAlpha = etiketPaintRange;
-
-        var x, y, w, h;
-        for (var i = 0; i < secimler.length; i++) {
-
-            ctx.fillStyle = Colors[secimler[i].choice];
-
-            x = cGridSize * secimler[i].cursorCol;
-            y = cGridSize * secimler[i].cursorRow;
-            w = cGridSize;
-            h = cGridSize;
-
-            ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
-        }
-        ctx.globalAlpha = 1.0;
-    }
-
-    function DrawRedRect() {
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "red";
-        ctx.beginPath();
-        ctx.rect(cursor.col * cGridSize, cursor.row * cGridSize, cGridSize, cGridSize);
-        ctx.stroke();
-    }
-
-    function DrawFlyingImage() {
-        ctx2.drawImage(image, cursor.col * gridSize, cursor.row * gridSize, gridSize, gridSize, 0, 0, flyingCanvas.width, flyingCanvas.height);
-    }
-
-
-    function CanvasChangeSize(increase) {
-        if (increase)
-            canvasDesiredWidth += 50;
-        else
-            canvasDesiredWidth -= 50;
-        canvasDesiredWidth = canvasDesiredWidth < 200 ? 200 : canvasDesiredWidth;
-        canvas.width = canvasDesiredWidth;
-        canvas.height = canvas.width / percentage;
-        UpdateAll();
-    }
-    function FlyingCanvasChangeSize(increase) {
-        if (increase)
-            flyingCanvasDesiredWidth += 50;
-        else
-            flyingCanvasDesiredWidth -= 50;
-        flyingCanvasDesiredWidth = flyingCanvasDesiredWidth < 200 ? 200 : flyingCanvasDesiredWidth;
-        flyingCanvas.width = flyingCanvasDesiredWidth;
-        flyingCanvas.height = flyingCanvasDesiredWidth;
-        DrawFlyingImage();
-    }
-
-    //___NAVIGATION___//
-    function NavigateBackward() {
-        console.log("imageNo" + imageNo);
-        imageNo -= 1;
-        if (imageNo < 1) {
-            imageNo = 1;
-            return;
-        }
-        console.log("yeni image index" + imageNo);
-        window.location = "/Home/Index/" + imageNo;
-    }
-
-    function NavigateForward() {
-        imageNo += 1;
-        if (imageNo > filesCount) {
-            imageNo = filesCount;
-            return;
-        }
-        window.location = "/Home/Index/" + imageNo;
-    }
-
-    function CursorIncrease() {
-        cursorindex = gridCountX * cursor.row + cursor.col;
-        cursorindex++;
-        if (cursorindex > gridCountX * gridCountY - 1)
-            cursorindex = 0;
-
-        cursor.row = Math.floor(cursorindex / gridCountX);
-        cursor.col = cursorindex - (cursor.row * gridCountX);
-
-        UpdateAll();
-    }
-
-    $("#canvas").click(function (e) {
-        cursor.col = Math.floor(e.offsetX / cGridSize);
-        cursor.row = Math.floor(e.offsetY / cGridSize);
-        cursor.row = (cursor.row > gridCountY - 1) ? gridCountY - 1 : cursor.row;
-        UpdateAll();
-    });
-
-
-
-    function ChooseLabel(choice) {
-        var pack = { imageNo: imageNo, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row };
-        var packExist = false;
-        for (var i = 0; i < secimler.length; i++)
-            // pack zaten varsa sadece choice değerini değiştir.. array.push yapma!
-            if (secimler[i].cursorCol == pack.cursorCol && secimler[i].cursorRow == pack.cursorRow) {
-                secimler[i].choice = pack.choice;
-                packExist = true;
-            }
-
-        if (!packExist) {
-            secimler.push({ choice: choice, cursorCol: cursor.col, cursorRow: cursor.row, cursorSize: gridSize });
-        }
-
-        CursorIncrease();
-    }
-
-    function ClearClasses() {
-        secimler = [];
-        UpdateAll();
-    }
-
-    function Completed() {
-
-        new OzAjax("/Home/Tamamlanan", POST, { secimler: secimler, imageID: imageID }, KaydetBasari, KaydetHata).Send();
-        function KaydetBasari(data) {
-            alert(data);
-            NavigateForward();
-        }
-        function KaydetHata(error) {
-            alert(error);
-        }
-    }
-
-
-    $("#seenorwhat").change(function () {
-        seenorwhat = $(this).val();
-        window.location = "/Home/Index/" + imageNo + "?seenorwhat=" + seenorwhat;
-    });
-
-    function LabelPaintRange(value) {
-
-        etiketPaintRange = value / 100.0;
-        UpdateAll();
-    }
-
+    // #region Definitions
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const manvas = document.getElementById("manvas");
+    const ctxm = manvas.getContext("2d");
+    const image = document.getElementById("image");
+    const photoWidth = 1280;
+    const seenBackend = Number($("#seenBackend").val());
+    const imageID = Number($("#imageID").val());
+    const filesCount = Number($("#filesCount").val());
+    const imageNo = Number($("#imageNo").val());
+    // #endregion
+    // #region Label Class
     class Label {
         constructor(label, posX, posY, wid, hei, PhotoID) {
             this.label = label;
@@ -332,7 +127,322 @@
             return JSON.stringify(someLabel) == JSON.stringify(this);
         }
     }
-    var label = new Label();
-    console.log('${label.posX}')
+    // #endregion
+    // #region Preferences
+    var canvasDesiredWidth = 1000;
+    var manvasDesiredWidth = 600;
+    var lineWidth = 2;
+    var Colors = ["black", "green", "red", "blue", "purple"];
+    var labelOpacity = 0.3;
+    // #endregion
+    // #region Variables
+    var cx, cy;
+    cx = cy = canvasDesiredWidth;
+    var mx, my;
+    mx = my = canvasDesiredWidth;
+    // #endregion
+
+    // #region INITIAL
+    function ChangeCanvasSize() {
+        canvas.width = cx;
+        canvas.height = cy;
+    }
+    function ChangeManvasSize() {
+        manvas.width = mx;
+        manvas.height = my;
+    }
+    function EmptyCanvases() {
+        ctx.fillStyle = "darkgray";
+        ctxm.fillStyle = "darkgray";
+        ctx.fillRect(0, 0, cx, cy);
+        ctxm.fillRect(0, 0, mx, my);
+    }
+
+    $(document).ready(function () {
+        EmptyCanvases();
+    })
+    $("#image").on("load",function () {
+        CanvasDrawImage();
+    })
+    // #endregion
+    var labelList = [];
+
+    function CanvasDrawImage() {
+        if (image.height) {
+            cx = image.width;
+            var percentage = image.width / image.height;
+            cy = canvas.width / (image.width / image.height);
+            ctx.drawImage(image, 0, 0, cx, cy, 0, 0, image.width, image.height);
+        }
+        console.log("canvas.height:",canvas.height, " - canvas.width", canvas.width);
+    }
+
+
+    function NavigateBackward(){
+
+    }
+    function NavigateForward() {
+
+    }
+
+
 </script>
 
+
+@*
+    <script>
+
+        var canvasDesiredWidth = 1000;
+        var flyingCanvasDesiredWidth = 600;
+        var lineWidth = 2;
+        var Colors = ["black", "green", "red", "blue", "purple"]
+
+        var imageNo = 0;
+        var filesCount = 0;
+        var seenorwhat = 0;
+        var gridSize = 128;
+        var secimler = [];
+        var imageID = 0;
+        var etiketPaintRange = 0.3;
+        var cursor = { col: 0, row: 0 };
+
+        $(document).ready(function () {
+            filesCount = Number($("#filesCount").val());
+            imageNo = Number($("#imageNo").val());
+            imageID = Number($("#imageID").val());
+            $("#seen").val($("#seenBackend").val());
+            GetLabels();
+        });
+
+        function GetLabels() {
+            new OzAjax("/Home/GetEtiketler", GET, { imageID: imageID }, GetEtBasari).Send();
+            function GetEtBasari(data) {
+                secimler = JSON.parse(data);
+                PaintChosenGrids();
+            }
+        }
+
+        //___CANVAS___//
+        // Get image Info
+        var image, imageWidth, imageHeight, gridCountX, gridCountY, cursorindex;
+        // create canvas
+        var canvas, ctx, percentage, cGridSize, flyingCanvas, ctx2;
+
+        $("#image").on("load", function () {
+            // Get image Info
+            image = document.getElementById("image");
+            imageWidth = image.width; // should be 1280
+            imageHeight = image.height;
+            gridCountX = Math.floor(imageWidth / gridSize);
+            gridCountY = Math.floor(imageHeight / gridSize);
+
+            cursorindex = 0;
+
+            // create canvas
+            canvas = document.getElementById("canvas");
+            ctx = canvas.getContext("2d");
+            percentage = imageWidth / imageHeight;
+            canvas.width = canvasDesiredWidth;
+            canvas.height = canvas.width / percentage;
+
+            flyingCanvas = document.getElementById("flyingCanvas");
+            ctx2 = flyingCanvas.getContext("2d");
+            flyingCanvas.width = flyingCanvasDesiredWidth;
+            flyingCanvas.height = flyingCanvasDesiredWidth;
+
+            UpdateAll();
+        });
+
+        function UpdateAll() {
+            DrawImage();
+            DrawGrid();
+            PaintChosenGrids();
+            DrawRedRect();
+            DrawFlyingImage();
+        }
+
+        function DrawImage() {
+            ctx.drawImage(image, 0, 0, imageWidth, imageHeight, 0, 0, canvas.width, canvas.height);
+        }
+        function DrawGrid() {
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = lineWidth;
+
+            // fixing cGridSize value
+            cGridSize = gridSize * (canvasDesiredWidth / imageWidth);
+
+            // vertical lines
+            for (var i = 0; i <= gridCountX; i++) {
+                ctx.moveTo(i * cGridSize, 0);
+                ctx.lineTo(i * cGridSize, gridCountY * cGridSize);
+                ctx.stroke();
+            }
+            // horizontal lines
+            for (var i = 0; i <= gridCountY; i++) {
+                ctx.moveTo(0, i * cGridSize);
+                ctx.lineTo(gridCountX * cGridSize, i * cGridSize);
+                ctx.stroke();
+            }
+        }
+
+        function PaintChosenGrids() {
+            ctx.globalAlpha = etiketPaintRange;
+
+            var x, y, w, h;
+            for (var i = 0; i < secimler.length; i++) {
+
+                ctx.fillStyle = Colors[secimler[i].choice];
+
+                x = cGridSize * secimler[i].cursorCol;
+                y = cGridSize * secimler[i].cursorRow;
+                w = cGridSize;
+                h = cGridSize;
+
+                ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function DrawRedRect() {
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.rect(cursor.col * cGridSize, cursor.row * cGridSize, cGridSize, cGridSize);
+            ctx.stroke();
+        }
+
+        function DrawFlyingImage() {
+            ctx2.drawImage(image, cursor.col * gridSize, cursor.row * gridSize, gridSize, gridSize, 0, 0, flyingCanvas.width, flyingCanvas.height);
+        }
+
+
+        function CanvasChangeSize(increase) {
+            if (increase)
+                canvasDesiredWidth += 50;
+            else
+                canvasDesiredWidth -= 50;
+            canvasDesiredWidth = canvasDesiredWidth < 200 ? 200 : canvasDesiredWidth;
+            canvas.width = canvasDesiredWidth;
+            canvas.height = canvas.width / percentage;
+            UpdateAll();
+        }
+        function FlyingCanvasChangeSize(increase) {
+            if (increase)
+                flyingCanvasDesiredWidth += 50;
+            else
+                flyingCanvasDesiredWidth -= 50;
+            flyingCanvasDesiredWidth = flyingCanvasDesiredWidth < 200 ? 200 : flyingCanvasDesiredWidth;
+            flyingCanvas.width = flyingCanvasDesiredWidth;
+            flyingCanvas.height = flyingCanvasDesiredWidth;
+            DrawFlyingImage();
+        }
+
+        //___NAVIGATION___//
+        function NavigateBackward() {
+            console.log("imageNo" + imageNo);
+            imageNo -= 1;
+            if (imageNo < 1) {
+                imageNo = 1;
+                return;
+            }
+            console.log("yeni image index" + imageNo);
+            window.location = "/Home/Index/" + imageNo;
+        }
+
+        function NavigateForward() {
+            imageNo += 1;
+            if (imageNo > filesCount) {
+                imageNo = filesCount;
+                return;
+            }
+            window.location = "/Home/Index/" + imageNo;
+        }
+
+        function CursorIncrease() {
+            cursorindex = gridCountX * cursor.row + cursor.col;
+            cursorindex++;
+            if (cursorindex > gridCountX * gridCountY - 1)
+                cursorindex = 0;
+
+            cursor.row = Math.floor(cursorindex / gridCountX);
+            cursor.col = cursorindex - (cursor.row * gridCountX);
+
+            UpdateAll();
+        }
+
+        $("#canvas").click(function (e) {
+            cursor.col = Math.floor(e.offsetX / cGridSize);
+            cursor.row = Math.floor(e.offsetY / cGridSize);
+            cursor.row = (cursor.row > gridCountY - 1) ? gridCountY - 1 : cursor.row;
+            UpdateAll();
+        });
+
+
+
+        function ChooseLabel(choice) {
+            var pack = { imageNo: imageNo, choice: choice, cursorCol: cursor.col, cursorRow: cursor.row };
+            var packExist = false;
+            for (var i = 0; i < secimler.length; i++)
+                // pack zaten varsa sadece choice değerini değiştir.. array.push yapma!
+                if (secimler[i].cursorCol == pack.cursorCol && secimler[i].cursorRow == pack.cursorRow) {
+                    secimler[i].choice = pack.choice;
+                    packExist = true;
+                }
+
+            if (!packExist) {
+                secimler.push({ choice: choice, cursorCol: cursor.col, cursorRow: cursor.row, cursorSize: gridSize });
+            }
+
+            CursorIncrease();
+        }
+
+        function ClearClasses() {
+            secimler = [];
+            UpdateAll();
+        }
+
+        function Completed() {
+
+            new OzAjax("/Home/Tamamlanan", POST, { secimler: secimler, imageID: imageID }, KaydetBasari, KaydetHata).Send();
+            function KaydetBasari(data) {
+                alert(data);
+                NavigateForward();
+            }
+            function KaydetHata(error) {
+                alert(error);
+            }
+        }
+
+
+        $("#seenorwhat").change(function () {
+            seenorwhat = $(this).val();
+            window.location = "/Home/Index/" + imageNo + "?seenorwhat=" + seenorwhat;
+        });
+
+        function LabelPaintRange(value) {
+
+            etiketPaintRange = value / 100.0;
+            UpdateAll();
+        }
+
+        class Label {
+            constructor(label, posX, posY, wid, hei, PhotoID) {
+                this.label = label;
+                this.posX = posX;
+                this.posY = posY;
+                this.wid = wid;
+                this.hei = hei
+                this.PhotoID = PhotoID;
+            }
+            Stringify() {
+                return JSON.stringify(this);
+            }
+            IsEqual(someLabel) {
+                return JSON.stringify(someLabel) == JSON.stringify(this);
+            }
+        }
+        var label = new Label();
+        
+    </script>
+
+*@
