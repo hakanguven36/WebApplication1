@@ -44,11 +44,21 @@ namespace WebApplication1.Controllers
             {
                 case 0:
                     filesCount = db.Photo.Where(u => u.completed == false).Count();
+                    if (filesCount == 0)
+                    {
+                        ViewBag.hata = "Bu seçimde resim yok!";
+                        return View();
+                    }
                     imageNo = Math.Clamp(imageNo, 1, filesCount);
                     resim = db.Photo.Where(u => u.completed == false).Skip(imageNo - 1).FirstOrDefault();
                     break;
                 case 1:
                     filesCount = db.Photo.Where(u => u.completed == true).Count();
+                    if (filesCount == 0)
+                    {
+                        ViewBag.hata = "Bu seçimde resim yok!";
+                        return View();
+                    }
                     imageNo = Math.Clamp(imageNo, 1, filesCount);
                     resim = db.Photo.Where(u => u.completed == true).Skip(imageNo - 1).FirstOrDefault();
                     break;

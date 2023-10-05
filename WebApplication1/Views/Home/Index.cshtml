@@ -9,26 +9,25 @@
         }
             .secBtn:hover {
                 color: white !important;
-            }        
+            }
     </style>
 }
-<img id="image" src="@ViewBag.path" style="display:none" />
-
+<input type="hidden" id="imagesrc" value="@ViewBag.path"/>
 <input type="hidden" id="seenBackend" value="@ViewBag.seen" />
 <input type="hidden" id="imageID" value="@ViewBag.imageID" />
 <input type="hidden" id="filesCount" value="@ViewBag.filesCount" />
 <input type="hidden" id="imageNo" value="@ViewBag.imageNo" />
 
-
 @if (!string.IsNullOrWhiteSpace(ViewBag.hata))
 {
     <span class="text-danger">HATA: @ViewBag.hata</span>
 }
-
-<table class="table table-sm table-borderless">
+<table class="table-sm table-borderless" style="width:100%">
     <tr>
         <td colspan="2" style="border-bottom:1px gray solid; padding-bottom:18px">
-            <span style="cursor:pointer" class="p-2">@(ViewBag.imageNo) / @ViewBag.filesCount</span>
+            <span>
+                <span id="naviScreen" style="cursor:pointer" class="p-2"></span>
+            </span>
             <button class="btn btn-sm btn-secondary" onclick="NavigateBackward()"><< Geri</button>
             <button class="btn btn-sm btn-secondary" onclick="NavigateForward()">İleri >></button>
             <span class="p-2">
@@ -58,18 +57,6 @@
         <td style="vertical-align:top">
             <div style="margin: 2px">
                 <span style="border: solid 1px gray; border-radius: 2px; padding: 3px">
-                    <span style="margin: 4px; margin-right: 10px; cursor: pointer" onclick="FlyingCanvasChangeSize(false)">-</span>
-                    <span style="margin: 4px; margin-left: 10px; cursor: pointer" onclick="FlyingCanvasChangeSize(true)">+</span>
-                </span>
-            </div>
-            <span>
-                <canvas id="manvas"></canvas>
-            </span>
-        </td>
-
-        <td style="vertical-align:top">
-            <div style="margin: 2px">
-                <span style="border: solid 1px gray; border-radius: 2px; padding: 3px">
                     <span style="margin: 4px; margin-right: 10px; cursor: pointer" onclick="CanvasChangeSize(false)">-</span>
                     <span style="margin: 4px; margin-left: 10px; cursor: pointer" onclick="CanvasChangeSize(true)">+</span>
                 </span>
@@ -93,8 +80,20 @@
                 <canvas id="canvas"></canvas>
             </span>
         </td>
+        <td style="vertical-align:top;">
+            <div style="margin: 2px">
+                <span style="border: solid 1px gray; border-radius: 2px; padding: 3px">
+                    <span style="margin: 4px; margin-right: 10px; cursor: pointer" onclick="FlyingCanvasChangeSize(false)">-</span>
+                    <span style="margin: 4px; margin-left: 10px; cursor: pointer" onclick="FlyingCanvasChangeSize(true)">+</span>
+                </span>
+            </div>
+            <span>
+                <canvas id="manvas"></canvas>
+            </span>
+        </td>
     </tr>
 </table>
+
 
 <script>
 
@@ -103,16 +102,23 @@
     const ctx = canvas.getContext("2d");
     const manvas = document.getElementById("manvas");
     const ctxm = manvas.getContext("2d");
-    const image = document.getElementById("image");
-    const photoWidth = 1280;
-    const seenBackend = Number($("#seenBackend").val());
+
+    const image = new Image();
+    image.src = $("#imagesrc").val();
+
+    var seenBackend = $("#seenBackend").val();
+    $("#seen").val(seenBackend).change();
+
     const imageID = Number($("#imageID").val());
     const filesCount = Number($("#filesCount").val());
-    const imageNo = Number($("#imageNo").val());
+    var imageNo = Number($("#imageNo").val());
+    const naviScreen = $("#naviScreen");
+    var oran = 1;
     // #endregion
     // #region Label Class
     class Label {
-        constructor(label, posX, posY, wid, hei, PhotoID) {
+        constructor(id, label, posX, posY, wid, hei, PhotoID) {
+            this.id = id;
             this.label = label;
             this.posX = posX;
             this.posY = posY;
@@ -127,6 +133,13 @@
             return JSON.stringify(someLabel) == JSON.stringify(this);
         }
     }
+    var labelList = [];
+    class Point {
+            X;
+            Y;
+    }
+    const mouse = new Point();
+
     // #endregion
     // #region Preferences
     var canvasDesiredWidth = 1000;
@@ -136,57 +149,129 @@
     var labelOpacity = 0.3;
     // #endregion
     // #region Variables
-    var cx, cy;
-    cx = cy = canvasDesiredWidth;
-    var mx, my;
-    mx = my = canvasDesiredWidth;
     // #endregion
-
     // #region INITIAL
-    function ChangeCanvasSize() {
-        canvas.width = cx;
-        canvas.height = cy;
-    }
-    function ChangeManvasSize() {
-        manvas.width = mx;
-        manvas.height = my;
-    }
-    function EmptyCanvases() {
+    function CanvasesInit() {
+        canvas.width = canvas.height = canvasDesiredWidth;
+        manvas.width = manvas.height = manvasDesiredWidth;
         ctx.fillStyle = "darkgray";
         ctxm.fillStyle = "darkgray";
-        ctx.fillRect(0, 0, cx, cy);
-        ctxm.fillRect(0, 0, mx, my);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctxm.fillRect(0, 0, manvas.width, manvas.height);
     }
-
-    $(document).ready(function () {
-        EmptyCanvases();
-    })
-    $("#image").on("load",function () {
+    
+    image.onload = function () {
+        
+        CanvasesInit();
         CanvasDrawImage();
-    })
+        printNaviScreen();
+    };
     // #endregion
-    var labelList = [];
+    
 
     function CanvasDrawImage() {
         if (image.height) {
-            cx = image.width;
-            var percentage = image.width / image.height;
-            cy = canvas.width / (image.width / image.height);
-            ctx.drawImage(image, 0, 0, cx, cy, 0, 0, image.width, image.height);
+            oran = image.width / image.height;
+            canvas.width = image.width;
+            canvas.height = canvas.width / oran;
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height, 0, 0, image.width, image.height);
         }
-        console.log("canvas.height:",canvas.height, " - canvas.width", canvas.width);
     }
 
-
-    function NavigateBackward(){
-
+    // #region Navigation
+    function NavigateBackward() {
+        imageNo--;
+        Number(imageNo).clamp(1, filesCount);
+        GoToImageNo();
     }
+
     function NavigateForward() {
+        imageNo++;
+        Number(imageNo).clamp(1, filesCount);
+        GoToImageNo();
+    }
+    function GoToImageNo() {
+        window.location = "/Home/Index?_imageNo=" + imageNo;
 
+    }
+    function printNaviScreen() {
+        naviScreen.html(imageNo + " / " + filesCount);
+    }
+    naviScreen.click(function () {
+        var naviinput = $("<input>");
+        naviinput.css({ "width": "5em", "border-radius": "0.4em" });
+        naviinput.keyup(function (e) {
+            if (e.keyCode == 13) {
+                imageNo = naviinput.val();
+                Number(imageNo).clamp(1, filesCount);
+                GoToImageNo();
+            }
+        });
+        $(this).parent().html(naviinput);
+        naviinput.focus();
+    });
+    $("#seen").change(function () {
+        window.location = "/Home/Index?_seen=" + $(this).val();
+    });
+    // #endregion
+
+    canvas.addEventListener("mousemove", function (e) {
+        mouse.X = e.offsetX;
+        mouse.Y = e.offsetY;
+        UpdateAll();
+    });
+
+    function UpdateAll() {
+        CanvasDrawImage();
+        CrossHair();
+        DrawKare();
+    }
+
+    function CrossHair() {
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.4;
+
+        // vertical line
+        ctx.moveTo(mouse.X, 0);
+        ctx.lineTo(mouse.X,canvas.height);
+        ctx.stroke();
+        // horizontal line
+        ctx.moveTo(0, mouse.Y);
+        ctx.lineTo(canvas.width, mouse.Y);
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+    }
+
+    var isKareDrawn = false;
+    var kareStart = new Point();
+    var kareEnd = new Point();
+    canvas.addEventListener("mousedown", function () {
+        kareStart.X = mouse.X;
+        kareStart.Y = mouse.Y;
+    });
+    canvas.addEventListener("mouseup", function () {
+        kareEnd.X = mouse.X;
+        kareEnd.Y = mouse.Y;
+        CreateKare();
+    });
+    function CreateKare() {
+        isKareDrawn = true;
+    }
+    function DrawKare() {
+        if (isKareDrawn) {
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.rect(kareStart.X, kareStart.Y, kareEnd.X - kareStart.X, kareEnd.Y - kareStart.Y);
+            ctx.stroke();
+        }
     }
 
 
 </script>
+
+<!--
 
 
 @*
@@ -442,7 +527,8 @@
             }
         }
         var label = new Label();
-        
+
     </script>
 
 *@
+-->

@@ -7,6 +7,7 @@ namespace WebApplication1.ViewModels
 {
     public class LabelViewModel
     {
+        public int id { get; set; }
         public int fotoID { get; set; }
         public int label { get; set; }
         public int cursorCol { get; set; }
