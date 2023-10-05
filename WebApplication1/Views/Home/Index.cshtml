@@ -45,10 +45,10 @@
     </tr>
     <tr>
         <td colspan="2" style="padding-top:18px">
-            <button class="btn secBtn" onclick="ChooseLabel(0)" style="background-color:darkslategray">Toprak</button>
-            <button class="btn secBtn" onclick="ChooseLabel(1)" style="background-color:darkgreen">Kültür</button>
-            <button class="btn secBtn" onclick="ChooseLabel(2)" style="background-color:orangered">YabancıOt</button>
-            <button class="btn secBtn" onclick="ChooseLabel(3)" style="background-color:royalblue">%50 Kültür+Yabancı</button>
+            <button id="btn-label-0" class="btn btn-outline-secondary" onclick="ChooseLabel(0)">Toprak</button>
+            <button id="btn-label-1" class="btn btn-outline-success" onclick="ChooseLabel(1)">Kültür</button>
+            <button id="btn-label-2" class="btn btn-outline-danger" onclick="ChooseLabel(2)">YabancıOt</button>
+            <button id="btn-label-3" class="btn btn-outline-primary" onclick="ChooseLabel(3)">%50 Kültür+Yabancı</button>
             &nbsp;&nbsp;||&nbsp;&nbsp;
             <button class="btn btn-sm secBtn" onclick="ClearClasses()" style="background-color:black">Tümünü Temizle!</button>
         </td>
@@ -244,29 +244,55 @@
     }
 
     var isKareDrawn = false;
+    var kareDrawning = false;
     var kareStart = new Point();
     var kareEnd = new Point();
     canvas.addEventListener("mousedown", function () {
         kareStart.X = mouse.X;
         kareStart.Y = mouse.Y;
+        kareDrawning = true;
+        isKareDrawn = true;
+    });
+    canvas.addEventListener("mousemove", function () {
+        if (kareDrawning) {
+
+            kareEnd.X = mouse.X;
+            kareEnd.Y = mouse.Y;
+        }
     });
     canvas.addEventListener("mouseup", function () {
-        kareEnd.X = mouse.X;
-        kareEnd.Y = mouse.Y;
-        CreateKare();
-    });
-    function CreateKare() {
+        kareDrawning = false;
         isKareDrawn = true;
+    });
+
+    var choosenLabel = -1;
+    var btnStyles = ["btn-secondary", "btn-success", "btn-danger", "btn-primary"];
+    var btnOutStyles = ["btn-outline-secondary", "btn-outline-success", "btn-outline-danger", "btn-outline-primary"];
+    function ChooseLabel(choice) {
+        choosenLabel = choice;
+        for (var i = 0; i < btnStyles.length; i++) {
+            $("#btn-label-" + i).removeClass(btnStyles[i]);
+            $("#btn-label-" + i).removeClass(btnOutStyles[i]);
+
+            if (choice == i) {
+                $("#btn-label-" + i).addClass(btnStyles[i]);
+            }
+            else {
+                $("#btn-label-" + i).addClass(btnOutStyles[i]);
+            }
+        }
     }
+    var labelColors = ["gray", "green", "red", "blue"]
     function DrawKare() {
         if (isKareDrawn) {
             ctx.lineWidth = 4;
-            ctx.strokeStyle = "red";
+            ctx.strokeStyle = labelColors[choosenLabel];
             ctx.beginPath();
             ctx.rect(kareStart.X, kareStart.Y, kareEnd.X - kareStart.X, kareEnd.Y - kareStart.Y);
             ctx.stroke();
         }
     }
+
 
 
 </script>
