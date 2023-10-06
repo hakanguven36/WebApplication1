@@ -67,12 +67,12 @@
                 <span class="ml-4">
                     Grid:
                     <span class="btn-group-sm">
-                        <button class="btn btn-outline-dark">#128</button>
-                        <button class="btn btn-outline-dark">#320</button>
-                        <button class="btn btn-outline-dark">#640</button>
-                        <button class="btn btn-outline-dark">#1280</button>
+                        <button id="btnGridSystem_0" onclick="CreateGridSystem(0)"  class="btn btn-outline-dark">FreeDraw</button>
                         -
-                        <button class="btn btn-outline-primary">FreeDraw</button>
+                        <button id="btnGridSystem_128" onclick="CreateGridSystem(128)" class="btn btn-outline-dark">#128</button>
+                        <button id="btnGridSystem_320" onclick="CreateGridSystem(320)"  class="btn btn-outline-dark">#320</button>
+                        <button id="btnGridSystem_640" onclick="CreateGridSystem(640)"  class="btn btn-outline-dark">#640</button>
+                        <button id="btnGridSystem_1280" onclick="CreateGridSystem(1280)"  class="btn btn-outline-dark">#1280</button>
                     </span>
                 </span>
             </div>
@@ -102,29 +102,49 @@
     const ctx = canvas.getContext("2d");
     const manvas = document.getElementById("manvas");
     const ctxm = manvas.getContext("2d");
-
     const image = new Image();
     image.src = $("#imagesrc").val();
-
-    var seenBackend = $("#seenBackend").val();
-    $("#seen").val(seenBackend).change();
-
     const imageID = Number($("#imageID").val());
     const filesCount = Number($("#filesCount").val());
-    var imageNo = Number($("#imageNo").val());
     const naviScreen = $("#naviScreen");
-    var oran = 1;
     // #endregion
-    // #region Label Class
-    class Label {
-        constructor(id, label, posX, posY, wid, hei, PhotoID) {
-            this.id = id;
-            this.label = label;
-            this.posX = posX;
-            this.posY = posY;
-            this.wid = wid;
-            this.hei = hei
+
+    // #region Classes
+    class Point { X; Y; }
+
+    class Rectangle {
+        #width;
+        #height;
+        constructor(beginX, beginY, endX, endY) {
+            let ifX = beginX < endX;
+            let ifY = beginY < endY;
+            this.beginX = ifX ? beginX : endX;
+            this.endX = ifX ? endX : beginX;
+            this.beginY = ifY ? beginY : endY;
+            this.endY = ifY ? endY : beginY;
+            this.#width = this.endX - this.beginX;
+            this.#height = this.endY - this.beginY;
+
+            // this part makes sure it is a SQUARE
+            if (this.#width > this.#height) {
+                this.endX = beginX + this.#height;
+                this.#width = this.endX - this.beginX;
+            }
+            else {
+                this.endY = beginY + this.#width;
+                this.#height = this.endY - this.beginY;
+            }
+
+        }
+        getWidth = () => this.#width;
+        getHeight = () => this.#height;
+    }
+
+    class Label {        
+        constructor(PhotoID, label, rectangle) {
             this.PhotoID = PhotoID;
+            this.label = label;
+            this.rectangle = rectangle;
         }
         Stringify() {
             return JSON.stringify(this);
@@ -133,24 +153,46 @@
             return JSON.stringify(someLabel) == JSON.stringify(this);
         }
     }
-    var labelList = [];
-    class Point {
-            X;
-            Y;
-    }
-    const mouse = new Point();
-
     // #endregion
-    // #region Preferences
+
+    // #region Variables
+    var imageNo = Number($("#imageNo").val());
+    var seenBackend = $("#seenBackend").val();
+    $("#seen").val(seenBackend).change();
+    var oran = 1;
     var canvasDesiredWidth = 1000;
     var manvasDesiredWidth = 600;
     var lineWidth = 2;
-    var Colors = ["black", "green", "red", "blue", "purple"];
+    var labelColors = ["black", "green", "red", "blue", "purple"];
+    var choosenLabel = -1;
+    var btnStyles = ["btn-secondary", "btn-success", "btn-danger", "btn-primary"];
+    var btnOutStyles = ["btn-outline-secondary", "btn-outline-success", "btn-outline-danger", "btn-outline-primary"];
     var labelOpacity = 0.3;
+    var labelList = [];
+    var gridSystem = 0;
+    const mouse = new Point();
+    var kareDrawning;
+    var kare = new Rectangle(0, 0, 1, 1);
     // #endregion
-    // #region Variables
-    // #endregion
+    
     // #region INITIAL
+    $(document).ready(function () {
+        ReadEssentialCookies();
+
+        if (gridSystem == 0) {
+            ActivateFreeDrawingTrigers();
+        }
+        else {
+            ActivateGridDrawingTrigers();
+        }
+    });
+
+    image.onload = function () {
+        CanvasesInit();
+        PrintNaviScreen();
+        UpdateAll();
+    };
+
     function CanvasesInit() {
         canvas.width = canvas.height = canvasDesiredWidth;
         manvas.width = manvas.height = manvasDesiredWidth;
@@ -159,16 +201,6 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctxm.fillRect(0, 0, manvas.width, manvas.height);
     }
-    
-    image.onload = function () {
-        
-        CanvasesInit();
-        CanvasDrawImage();
-        printNaviScreen();
-    };
-    // #endregion
-    
-
     function CanvasDrawImage() {
         if (image.height) {
             oran = image.width / image.height;
@@ -177,6 +209,8 @@
             ctx.drawImage(image, 0, 0, canvas.width, canvas.height, 0, 0, image.width, image.height);
         }
     }
+    
+    // #endregion
 
     // #region Navigation
     function NavigateBackward() {
@@ -194,7 +228,7 @@
         window.location = "/Home/Index?_imageNo=" + imageNo;
 
     }
-    function printNaviScreen() {
+    function PrintNaviScreen() {
         naviScreen.html(imageNo + " / " + filesCount);
     }
     naviScreen.click(function () {
@@ -215,18 +249,24 @@
     });
     // #endregion
 
-    canvas.addEventListener("mousemove", function (e) {
-        mouse.X = e.offsetX;
-        mouse.Y = e.offsetY;
-        UpdateAll();
-    });
+    // #region Choose Label
+    function ChooseLabel(choice) {
+        choosenLabel = choice;
+        for (var i = 0; i < btnStyles.length; i++) {
+            $("#btn-label-" + i).removeClass(btnStyles[i]);
+            $("#btn-label-" + i).removeClass(btnOutStyles[i]);
 
-    function UpdateAll() {
-        CanvasDrawImage();
-        CrossHair();
-        DrawKare();
+            if (choice == i) {
+                $("#btn-label-" + i).addClass(btnStyles[i]);
+            }
+            else {
+                $("#btn-label-" + i).addClass(btnOutStyles[i]);
+            }
+        }
     }
+    // #endregion
 
+    // #region CrossHair
     function CrossHair() {
         ctx.strokeStyle = "white";
         ctx.lineWidth = 2;
@@ -242,56 +282,121 @@
         ctx.stroke();
         ctx.globalAlpha = 1.0;
     }
+    // #endregion
 
-    var isKareDrawn = false;
-    var kareDrawning = false;
-    var kareStart = new Point();
-    var kareEnd = new Point();
-    canvas.addEventListener("mousedown", function () {
-        kareStart.X = mouse.X;
-        kareStart.Y = mouse.Y;
-        kareDrawning = true;
-        isKareDrawn = true;
-    });
-    canvas.addEventListener("mousemove", function () {
-        if (kareDrawning) {
-
-            kareEnd.X = mouse.X;
-            kareEnd.Y = mouse.Y;
-        }
-    });
-    canvas.addEventListener("mouseup", function () {
-        kareDrawning = false;
-        isKareDrawn = true;
-    });
-
-    var choosenLabel = -1;
-    var btnStyles = ["btn-secondary", "btn-success", "btn-danger", "btn-primary"];
-    var btnOutStyles = ["btn-outline-secondary", "btn-outline-success", "btn-outline-danger", "btn-outline-primary"];
-    function ChooseLabel(choice) {
-        choosenLabel = choice;
-        for (var i = 0; i < btnStyles.length; i++) {
-            $("#btn-label-" + i).removeClass(btnStyles[i]);
-            $("#btn-label-" + i).removeClass(btnOutStyles[i]);
-
-            if (choice == i) {
-                $("#btn-label-" + i).addClass(btnStyles[i]);
-            }
-            else {
-                $("#btn-label-" + i).addClass(btnOutStyles[i]);
-            }
-        }
+    // #region CookieReadWrite
+    function ReadEssentialCookies() {
+        gridSystem = Number(OzGetCookie("grid"));
+        let btn = $("#btnGridSystem_" + gridSystem);
+        btn.removeClass("btn-outline-dark");
+        btn.addClass("btn-dark");
     }
-    var labelColors = ["gray", "green", "red", "blue"]
+    
+    function CreateGridSystem(gridSize) {
+        OzSetCookie("grid", gridSize);
+        window.location.reload(true);
+    }
+    // #endregion
+
+    // #region FreeDrawing
+    function ActivateFreeDrawingTrigers() {
+
+        canvas.addEventListener("mousedown", function () {
+            if (choosenLabel == -1) {
+                alert("Sınıf seçiniz!");
+                return;
+            }
+            kare = new Rectangle(mouse.X, mouse.Y, mouse.X, mouse.Y);
+            kareDrawning = true;
+
+        });
+
+        canvas.addEventListener("mousemove", function (e) {
+            mouse.X = e.offsetX;
+            mouse.Y = e.offsetY;
+            if (kareDrawning) {
+                kare = new Rectangle(kare.beginX, kare.beginY, mouse.X, mouse.Y);
+            }
+            UpdateAll();
+        });
+
+        canvas.addEventListener("mouseup", function () {
+            kareDrawning = false;
+            labelList.push(new Label(imageID, choosenLabel, kare));
+        });
+    }
+    
     function DrawKare() {
-        if (isKareDrawn) {
+        if (kareDrawning) {
             ctx.lineWidth = 4;
             ctx.strokeStyle = labelColors[choosenLabel];
             ctx.beginPath();
-            ctx.rect(kareStart.X, kareStart.Y, kareEnd.X - kareStart.X, kareEnd.Y - kareStart.Y);
+            ctx.rect(kare.beginX, kare.beginY, kare.getWidth(), kare.getHeight());            
             ctx.stroke();
         }
     }
+
+    function DrawRectangles() {
+        if (labelList.length == 0)
+            return;
+
+        ctx.lineWidth = 4;
+
+        for (var i = 0; i < labelList.length; i++) {
+            let r = labelList[i].rectangle;
+            ctx.beginPath();
+            ctx.rect(r.beginX, r.beginY, r.getWidth(), r.getHeight());
+            ctx.globalAlpha = labelOpacity;
+            ctx.fillStyle = labelColors[labelList[i].label];
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+            ctx.strokeStyle = labelColors[labelList[i].label];
+            ctx.stroke();
+        }
+    }
+    // #endregion
+
+    // #region GridDrawing
+    function ActivateGridDrawingTrigers() {
+        canvas.addEventListener("mousedown", function (e) {
+            mouse.X = e.offsetX;
+            mouse.Y = e.offsetY;
+            // ...
+            alert("grid sistemi yapım aşamasındadır :'( ");
+
+            UpdateAll();
+        });
+    }
+    var selectedGrid;
+    function DrawGrids() {
+        // ...
+    }
+    function PaintSelected() {
+        if (selectedGrid == null)
+            return;
+
+        // ...
+    }
+    function PaintGrids() {
+        // ...
+    }
+
+    // #endregion
+
+    function UpdateAll() {
+        CanvasDrawImage();
+        if (gridSystem == 0) {
+            CrossHair();
+            DrawRectangles();
+            DrawKare();
+        }
+        else {
+            DrawGrids();
+            PaintSelected();
+            PaintGrids();
+        }
+    }
+
 
 
 
