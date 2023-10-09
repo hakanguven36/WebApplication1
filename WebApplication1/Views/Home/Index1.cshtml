@@ -10,20 +10,6 @@
             .secBtn:hover {
                 color: white !important;
             }
-        .btnSizing{
-            border:none;
-            background-color:white;
-        }
-        .btnSizing:focus{
-            outline:none;
-            border:none;
-        }
-        .btnGroup{
-            display:table-cell;
-            height:2em;
-            vertical-align:middle;
-            border:1px solid gray;
-        }
     </style>
 }
 <input type="hidden" id="imagesrc" value="@ViewBag.path"/>
@@ -58,35 +44,25 @@
         </td>
     </tr>  
     <tr>
-        <td>
-            <div style="vertical-align:bottom">
-
-                <div class="btnGroup" style="float:left; margin-right:10px">
-                    <button class="btnSizing" onclick="CanvasChangeSize(false)">-</button>
-                    <button class="btnSizing" onclick="CanvasChangeSize(true)">+</button>
-                </div>
-                <div style="float:left;">
-
-
-                    <label for="opacitiRanger">
-                        Opacity:
-
-                        <input type="range" id="opacitiRanger" oninput="LabelPaintRange(this.value)" value="30" step="10" />
-                    </label>
-                    <button id="btn-label-0" class="btn btn-outline-secondary" onclick="ChooseLabel(0)">Toprak</button>
-                    <button id="btn-label-1" class="btn btn-outline-success" onclick="ChooseLabel(1)">Kültür</button>
-                    <button id="btn-label-2" class="btn btn-outline-danger" onclick="ChooseLabel(2)">YabancıOt</button>
-                    <button id="btn-label-3" class="btn btn-outline-primary" onclick="ChooseLabel(3)">%50 Kültür+Yabancı</button>
-                    &nbsp;&nbsp;||&nbsp;&nbsp;
-                    <button class="btn btn-sm secBtn" onclick="ClearAllLabels()" style="background-color:black">Tümünü Temizle!</button>
-                </div>
-            </div>
+        <td style="vertical-align:bottom">
+            <span style="border: solid 1px gray; border-radius: 2px; padding: 3px">
+                <span style="margin: 4px; margin-right: 10px; cursor: pointer" onclick="CanvasChangeSize(false)">-</span>
+                <span style="margin: 4px; margin-left: 10px; cursor: pointer" onclick="CanvasChangeSize(true)">+</span>
+            </span>
+            Opacity:
+            <input type="range" id="opacitiRanger" oninput="LabelPaintRange(this.value)" value="30" step="10" />
+            <button id="btn-label-0" class="btn btn-outline-secondary" onclick="ChooseLabel(0)">Toprak</button>
+            <button id="btn-label-1" class="btn btn-outline-success" onclick="ChooseLabel(1)">Kültür</button>
+            <button id="btn-label-2" class="btn btn-outline-danger" onclick="ChooseLabel(2)">YabancıOt</button>
+            <button id="btn-label-3" class="btn btn-outline-primary" onclick="ChooseLabel(3)">%50 Kültür+Yabancı</button>
+            &nbsp;&nbsp;||&nbsp;&nbsp;
+            <button class="btn btn-sm secBtn" onclick="ClearAllLabels()" style="background-color:black">Tümünü Temizle!</button>
         </td>
         <td style="vertical-align: bottom">
-            <div class="btnGroup" style="float:left; margin-right:10px">
-                <button class="btnSizing" onclick="ManvasChangeSize(false)">-</button>
-                <button class="btnSizing" onclick="ManvasChangeSize(true)">+</button>
-            </div>
+            <span style="border: solid 1px gray; border-radius: 2px; padding: 3px">
+                <span style="margin: 4px; margin-right: 10px; cursor: pointer" onclick="ManvasChangeSize(false)">-</span>
+                <span style="margin: 4px; margin-left: 10px; cursor: pointer" onclick="ManvasChangeSize(true)">+</span>
+            </span>
         </td>
     </tr>
     <tr>
@@ -101,7 +77,7 @@
 
 
 <script>
-
+    
     // #region Definitions
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
@@ -145,7 +121,7 @@
         getHeight = () => this.#height;
     }
 
-    class Label {
+    class Label {        
         constructor(PhotoID, label, rectangle, _sizeFactor) {
             this.PhotoID = PhotoID;
             this.label = label;
@@ -185,7 +161,7 @@
     var selectedLabelNo = -1;
     var driftingNow = false;
     // #endregion
-
+    
     // #region INITIAL
     $(document).ready(function () {
         ReadEssentialCookies();
@@ -267,7 +243,7 @@
     });
     // #endregion
 
-    // #region Cookies
+    // #region CookieReadWrite
     function ReadEssentialCookies() {
         gridSystem = Number(OzGetCookie("grid"));
         let btn = $("#btnGridSystem_" + gridSystem);
@@ -279,13 +255,13 @@
         // get options and apply
         let options = JSON.parse(OzGetCookie("options"));
         labelOpacity = options[0];
-        $("#opacitiRanger").val(labelOpacity * 100);
+        $("#opacitiRanger").val(labelOpacity*100);
         canvasDesiredWidth = options[1];
         ArrangeSizeFactor();
         UpdateAll();
         manvasDesiredWidth = options[2];
     }
-
+    
     function SaveGridSystem(gridSize) {
         OzSetCookie("grid", gridSize);
         window.location.reload(true);
@@ -295,8 +271,9 @@
         OzSetCookie("options", options);
     }
     // #endregion
-    
+
     // #region Keyboard&Intervals
+
     document.addEventListener("keyup", function (e) {
 
         switch (e.keyCode) {
@@ -316,19 +293,18 @@
     }, 100);
     // #endregion
 
-    // #region Adjust
+    // #region Adjustment Tools
     function CanvasChangeSize(increase) {
         increase = increase ? 50 : -50;
         canvasDesiredWidth = canvasDesiredWidth > 200 ?
             canvasDesiredWidth + increase : canvasDesiredWidth;
         ArrangeSizeFactor();
         SaveAdjustmentOptions();
-        canvas.focus();
         UpdateAll();
     }
     function ManvasChangeSize(increase) {
         increase = increase ? 50 : -50;
-        manvasDesiredWidth = manvasDesiredWidth > 200 ?
+        manvasDesiredWidth = manvasDesiredWidth> 200 ?
             manvasDesiredWidth + increase : manvasDesiredWidth;
         SaveAdjustmentOptions();
         UpdateManvas(manvasRectangle);
@@ -366,7 +342,7 @@
 
         // vertical line
         ctx.moveTo(mouse.X, 0);
-        ctx.lineTo(mouse.X, canvas.height);
+        ctx.lineTo(mouse.X,canvas.height);
         ctx.stroke();
         // horizontal line
         ctx.moveTo(0, mouse.Y);
@@ -377,7 +353,7 @@
     // #endregion
 
     // #region FreeDrawing
-
+    
     function DefineselectedLabelNo() {
         selectedLabelNo = -1;
         for (var i = 0; i < labelList.length; i++) {
@@ -390,7 +366,8 @@
             if (mouse.X >= x0 &
                 mouse.X <= x1 &
                 mouse.Y >= y0 &
-                mouse.Y <= y1) {
+                mouse.Y <= y1)
+            {
                 selectedLabelNo = i;
                 driftingNow = true;
                 UpdateManvas(label.rectangle);
@@ -408,7 +385,7 @@
             selectedLabelNo = -1;
             driftingNow = false;
 
-            switch (e.button) {
+            switch (e.button ) {
                 case 0:
                     if (choosenLabel == -1) {
                         alert("Sınıf seçiniz!");
@@ -428,22 +405,24 @@
         canvas.addEventListener("mousemove", function (e) {
             mouse.X = e.offsetX;
             mouse.Y = e.offsetY;
-
-
+            
+            
             if (kareDrawning) {
                 kare = new Rectangle(kare.beginX, kare.beginY, mouse.X, mouse.Y);
                 UpdateManvas(kare);
             }
 
-            if (driftingNow)
+            if(driftingNow)
                 if (selectedLabelNo != -1) {
                     if (labelList[selectedLabelNo].rectangle.beginX + e.movementX >= 0 &
-                        labelList[selectedLabelNo].rectangle.endX + e.movementX <= canvas.width) {
+                        labelList[selectedLabelNo].rectangle.endX + e.movementX <= canvas.width)
+                    {
                         labelList[selectedLabelNo].rectangle.beginX += e.movementX;
                         labelList[selectedLabelNo].rectangle.endX += e.movementX;
                     }
                     if (labelList[selectedLabelNo].rectangle.beginY + e.movementY >= 0 &
-                        labelList[selectedLabelNo].rectangle.endY + e.movementY <= canvas.height) {
+                        labelList[selectedLabelNo].rectangle.endY + e.movementY <= canvas.height)
+                    {
                         labelList[selectedLabelNo].rectangle.beginY += e.movementY;
                         labelList[selectedLabelNo].rectangle.endY += e.movementY;
                     }
@@ -468,13 +447,13 @@
             UpdateAll();
         });
     }
-
+    
     function DrawKare() {
         if (kareDrawning) {
             ctx.lineWidth = 4;
             ctx.strokeStyle = labelColors[choosenLabel];
             ctx.beginPath();
-            ctx.rect(kare.beginX, kare.beginY, kare.getWidth(), kare.getHeight());
+            ctx.rect(kare.beginX, kare.beginY, kare.getWidth(), kare.getHeight());            
             ctx.stroke();
         }
     }
@@ -489,7 +468,7 @@
             let r = labelList[i].rectangle;
             ctx.beginPath();
             ctx.rect(r.beginX, r.beginY, r.getWidth(), r.getHeight());
-            if (selectedLabelNo == i)
+            if(selectedLabelNo == i)
                 ctx.globalAlpha = labelOpacity - alpha;
             else
                 ctx.globalAlpha = labelOpacity;
@@ -505,7 +484,7 @@
         if (selectedLabelNo != -1) {
             alpha += 0.03;
             alpha = alpha > labelOpacity ? 0 : alpha;
-
+                
             UpdateAll();
         }
         else
@@ -514,12 +493,63 @@
 
     // #endregion
 
+    // #region GridDrawing
+    function ActivateGridDrawingTrigers() {
+        canvas.addEventListener("mousedown", function (e) {
+            mouse.X = e.offsetX;
+            mouse.Y = e.offsetY;
+            // ...
+            alert("grid sistemi yapım aşamasındadır :'( ");
+
+            UpdateAll();
+        });
+    }
+    var selectedGrid;
+    function DrawGrids() {
+
+        let gridCountX = Math.floor(image.width / gridSystem);
+        let gridCountY = Math.floor(image.height / gridSystem);
+        cgridSize = gridSystem / sizeFactor;
+        // vertical lines
+        for (var i = 0; i <= gridCountX; i++) {
+            ctx.moveTo(i * cgridSize , 0);
+            ctx.lineTo(i * cgridSize, gridCountY * cgridSize );
+            ctx.stroke();
+        }
+        // horizontal lines
+        for (var i = 0; i <= gridCountY; i++) {
+            ctx.moveTo(0, i * cgridSize );
+            ctx.lineTo(gridCountX * cgridSize , i * cgridSize );
+            ctx.stroke();
+        }
+    }
+
+    function PaintSelected() {
+        if (selectedGrid == null)
+            return;
+
+        // ...
+    }
+    function PaintGrids() {
+        // ...
+    }
+
+    // #endregion
+
+
     // #region Common Functions
     function UpdateAll() {
         CanvasDrawImage();
-        CrossHair();
-        DrawRectangles();
-        DrawKare();
+        if (gridSystem == 0) {
+            CrossHair();
+            DrawRectangles();
+            DrawKare();
+        }
+        else {
+            DrawGrids();
+            PaintSelected();
+            PaintGrids();
+        }
     }
 
     function ArrangeSizeFactor() {
@@ -528,7 +558,7 @@
 
     function UpdateManvas(rect_like) {
         let mb = manvasRectangle = rect_like;
-
+        
         if (image.height) {
             manvas.width = manvasDesiredWidth;
             manvas.height = manvasDesiredWidth;
@@ -547,11 +577,6 @@
         ManvasInit();
     }
 
-    function Completed() {
-        console.log(JSON.stringify( labelList[0]));
-    }
-
     // #endregion
-
 
 </script>
