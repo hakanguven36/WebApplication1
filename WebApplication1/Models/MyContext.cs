@@ -12,5 +12,6 @@ namespace WebApplication1.Models
         public DbSet<Project> Project { get; set; }
 		public DbSet<Photo> Photo { get; set; }
 		public DbSet<Label> Label { get; set; }
-    }
+		public DbSet<Annotation> Annotation { get; set; }
+	}
 }

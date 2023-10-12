@@ -11,11 +11,14 @@ namespace WebApplication1.Models
     {
         public int ID { get; set; }
 
-        public int label { get; set; }
-        public int posX { get; set; }
-        public int posY { get; set; }
-        public int wid { get; set; }
-        public int hei { get; set; }
+        public int beginX { get; set; }
+        public int beginY { get; set; }
+        public int endX { get; set; }
+        public int endY { get; set; }
+
+        [ForeignKey(nameof(Annotation))]
+        public int AnnotationID { get; set; }
+        public Annotation Annotation { get; set; }
 
         [ForeignKey(nameof(Photo))]
         public int PhotoID { get; set; }

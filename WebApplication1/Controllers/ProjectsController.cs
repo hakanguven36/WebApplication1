@@ -13,142 +13,84 @@ namespace WebApplication1.Controllers
     [Yetki("admin")]
     public class ProjectsController : Controller
     {
-        private readonly MyContext _context;
+        private readonly MyContext db;
 
-        public ProjectsController(MyContext context)
+        public ProjectsController(MyContext db)
         {
-            _context = context;
+            this.db = db;
         }
 
-        // GET: Projects
-        public async Task<IActionResult> Index()
+        
+        public IActionResult Index()
         {
-            return View(await _context.Project.ToListAsync());
+            return View(db.Project.Include(u=>u.Annotation).ToList());
         }
 
-        // GET: Projects/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var proje = await _context.Project
-                .FirstOrDefaultAsync(m => m.ID == id);
-            if (proje == null)
-            {
-                return NotFound();
-            }
-
-            return View(proje);
-        }
-
-        // GET: Projects/Create
         public IActionResult Create()
         {
-            return View();
+            return PartialView();
         }
 
-        // POST: Projects/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,name")] Project proje)
+        public IActionResult Create(Project project)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(proje);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if(db.Project.FirstOrDefault(u=>u.name == project.name) != null)
+                {
+                    return Json("", "Bu isimde bir proje zaten var!");
+                }
+
+                db.Add(project);
+                db.SaveChanges();
+
+                return Json("ok");
             }
-            return View(proje);
+            catch(Exception e)
+            {
+                return Json(e.Message);
+            }
         }
-
-        // GET: Projects/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        
+        public IActionResult Edit(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var proje = await _context.Project.FindAsync(id);
+            var proje = db.Project.Include(u=>u.Annotation).FirstOrDefault(u=>u.ID ==  id);
             if (proje == null)
             {
-                return NotFound();
+                return Json("Proje bulunamadı!");
             }
-            return View(proje);
+            return Json(proje);
         }
 
-        // POST: Projects/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ID,name")] Project proje)
+        public IActionResult Edit(Project proje)
         {
-            if (id != proje.ID)
+            try
             {
-                return NotFound();
+                db.Update(proje);
+                db.SaveChanges();
+                return Json("ok");
             }
-
-            if (ModelState.IsValid)
+            catch (Exception e)
             {
-                try
-                {
-                    _context.Update(proje);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ProjeExists(proje.ID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                return Json(e.Message);
             }
-            return View(proje);
         }
 
-        // GET: Projects/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int id)
         {
-            if (id == null)
+            try
             {
-                return NotFound();
+                var proje = db.Project.Include(u=>u.Annotation).FirstOrDefault(u => u.ID == id);
+                db.Remove(proje);
+                return Json("ok");
             }
-
-            var proje = await _context.Project
-                .FirstOrDefaultAsync(m => m.ID == id);
-            if (proje == null)
+            catch (Exception e)
             {
-                return NotFound();
+                return Json(e.Message);
             }
-
-            return View(proje);
-        }
-
-        // POST: Projects/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var proje = await _context.Project.FindAsync(id);
-            _context.Project.Remove(proje);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool ProjeExists(int id)
-        {
-            return _context.Project.Any(e => e.ID == id);
         }
     }
 }

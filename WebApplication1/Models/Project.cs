@@ -11,5 +11,7 @@ namespace WebApplication1.Models
     {
         public int ID { get; set; }
         public string name { get; set; }
+
+        public List<Annotation> Annotation { get; set; }
     }
 }

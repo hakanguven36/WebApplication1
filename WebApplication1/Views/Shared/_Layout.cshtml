@@ -7,34 +7,29 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - WebApplication1</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
     @await RenderSectionAsync("Styles", required: false)
 
     <script src="~/lib/jquery/jquery.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </head>
 <body>
-
-    <div style="display:flex">
+    <div>
         @if (user.admin)
         {
             <a class="btn btn-sm btn-outline-warning" asp-action="Index" asp-controller="Users">Users</a>
             <a class="btn btn-sm btn-outline-warning" asp-action="Index" asp-controller="Projects">Projects</a>
             <a class="btn btn-sm btn-outline-warning" asp-action="Index" asp-controller="Uploader">Uploader</a>
         }
-
-        <span class="ml-auto mr-2">Hoşgeldiniz @user.username</span>
-        <a class="btn btn-sm btn-primary mr-2 " asp-action="Logout" asp-controller="Accounts" style="">Çıkış Yap</a>
+        <a class="btn btn-sm btn-primary float-end" asp-action="Logout" asp-controller="Accounts" style="">Çıkış Yap</a>
+        <span class="float-end">Hoşgeldiniz @user.username</span>
     </div>
-    <div>
 
+    <div>
         @RenderBody()
     </div>
-
-
-
 </body>
 </html>

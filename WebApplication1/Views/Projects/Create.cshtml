@@ -1,33 +1,61 @@
 ﻿@model WebApplication1.Models.Project
 
-@{
-    ViewData["Title"] = "Create";
-}
 
-<h1>Create</h1>
 
-<h4>Proje</h4>
+<label for="name">Proje Adı</label>
+<input class="form-control" id="name" name="name" />
+
 <hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="name" class="control-label"></label>
-                <input asp-for="name" class="form-control" />
-                <span asp-validation-for="name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
+Etiketler:
+<br />
+<div id="annotationList">
+    <li style="color:gray">Lütfen etiket ekleyiniz...</li>
 </div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
+<div style="vertical-align:middle; border:solid 1px gray; border-radius:1em; padding:1em;">
+    <label for="annoName">Etiket Ekle</label>
+    <input id="annoName" />
+    
+    <input type="color" id="color" style="vertical-align:middle" />
+    
+    <button class="btn btn-sm btn-secondary" onclick="AddAnnoation()" >Ekle</button>
 </div>
+<hr />
+<button class="btn btn-success">Kaydet</button>
 
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+<script>
+
+    var annoList = [];
+    function AddAnnoation() {
+        var anno = {};
+        anno.name = $("#annoName").val();
+        anno.color = $("#color").val();
+        if (isDarkBackground(anno.color))
+            anno.textColor = "#EEEEEE";
+        else
+            anno.textColor = "#000000";
+        annoList.push(anno);
+        UpdateAnnoations();
+        $("#annoName").val("");
+        $("#color").val("");
+    }
+    function UpdateAnnoations() {
+        $("#annotationList").empty();
+
+        for (var i = 0; i < annoList.length; i++) {
+            var li = $("<div>");
+            li.css({ "background-color": annoList[i].color, "color":annoList[i].textColor, "margin":"1em" });
+            
+            li.append($("<span>").html(annoList[i].name));
+            li.append($("<button>").html("X").css({"float":"right"}).click(function () { deleteMe(i) }));
+            $("#annotationList").append(li);
+        }
+        function deleteMe(n) {
+            console.log("siliyorum bunu: ", n);
+            annoList.splice(n, 1);
+            UpdateAnnoations();
+        }
+    }
+
+</script>
+        
+

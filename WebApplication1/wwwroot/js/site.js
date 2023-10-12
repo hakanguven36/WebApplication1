@@ -82,24 +82,6 @@ OzAjax.prototype.Error = function (message) {
 //};
 
 
-
-// #region JSONAnswer
-function JsonAnswerHandler(data) {
-    let dataparsed = JSON.parse(data);
-    if (dataparsed.success == true) {
-        if (dataparsed.message)
-            OzModal.Info("Bilgi", dataparsed.message, 2000);
-        else
-            OzModal.Info("Bilgi", "İşlem başarılı.", 2000);
-        return true;
-    }
-    else
-        OzModal.Info("Error!", dataparsed.message, 8000);
-    return false;
-}
-// #endregion
-
-
 function FirstLettersCapital(htmlobj) {
     let str = $(htmlobj).val();
     let yenistr = str.toLocaleLowerCase('TR').replace(/(?:^|\s|,|;|!|:|-|\.|\?)[a-z0-9ğçşüöı]/g, function (match) {
@@ -139,3 +121,81 @@ function OzGetCookie(cname) {
 Number.prototype.clamp = function (min, max) {
     return Math.min(Math.max(this, min), max);
 };
+
+function isDarkBackground(hex) {
+    let color = hexToRgb(hex);
+    let esik = 120;
+    if (color.r > esik && color.g > esik && color.b > esik)
+        return false;
+    return true;
+}
+
+function hexToRgb(hex) {
+    // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function (m, r, g, b) {
+        return r + r + g + g + b + b;
+    });
+
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+
+// #region OzModal
+function OZMODAL() {
+
+    let modal = $("<div>")
+        .addClass("modal fade");
+    let modaldialog = $("<div>")
+        .addClass("modal-dialog");
+    let modalcontent = $("<div>")
+        .addClass("modal-content");
+    let modalheader = $("<div>")
+        .addClass("modal-header");
+    let modaltitle = $("<h5>")
+        .addClass("modal-title");
+    let modalclosebutton = $("<button>")
+        .addClass("btn-close")
+        .attr("aria-label", "Close")
+        .attr("data-bs-dismiss", "modal");
+    let modalbody = $("<div>")
+        .addClass("modal-body");
+    let modalfooter = $("<div>")
+        .addClass("modal-footer");
+
+    modal.append(modaldialog);
+    modaldialog.append(modalcontent);
+    modalcontent.append(modalheader);
+    modalcontent.append(modalbody);
+    modalcontent.append(modalfooter);
+    modalheader.append(modaltitle);
+    modalheader.append(modalclosebutton);
+    this.modaltitle = modaltitle;
+    this.modalbody = modalbody;
+    this.modalfooter = modalfooter;
+    $(document).ready(function () {
+        $("body").append(modal);
+        new bootstrap.Modal($(".modal"));
+    });
+
+    this.Show = function (title, body) {
+        $(".modal-title").html(title);
+        $(".modal-body").html(body);
+        $(".modal-footer").remove();
+        $(".modal").modal("show");
+    }
+    this.Info = function (title, message, miliseconds) {
+        this.Show(title, message);
+        setTimeout(function () { $(".modal").modal("hide") }, miliseconds || 2000);
+    }
+    this.Close = function () {
+        $(".modal").modal("hide");
+    }
+}
+
+var OzModal = new OZMODAL();

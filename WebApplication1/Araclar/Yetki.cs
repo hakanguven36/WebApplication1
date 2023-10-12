@@ -20,10 +20,16 @@ namespace WebApplication1.Araclar
 		{
 			User user = context.HttpContext.Session.GetObject<User>("user");
 			if (user == null)
+            {
 				Yetkisiz(context);
+				return;
+            }
 			if(admin == "admin")
 				if(user.admin == false)
+                {
 					Adminsiz(context);
+					return;
+                }
 
 		}
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WebApplication1.Models;
 
 namespace WebApplication1.ViewModels
 {
@@ -9,7 +10,7 @@ namespace WebApplication1.ViewModels
     {
         public int id { get; set; }
         public int photoID { get; set; }
-        public int label { get; set; }
+        public int AnnotationID { get; set; }
         public Rectangle rectangle { get; set; }
         public int sizeFactor { get; set; }
     }

@@ -16,10 +16,38 @@ namespace WebApplication1.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "5.0.17");
 
+            modelBuilder.Entity("WebApplication1.Models.Annotation", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ProjectID")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("color")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("textColor")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("ProjectID");
+
+                    b.ToTable("Annotation");
+                });
+
             modelBuilder.Entity("WebApplication1.Models.Label", b =>
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AnnotationID")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("PhotoID")
@@ -28,22 +56,21 @@ namespace WebApplication1.Migrations
                     b.Property<int>("UserID")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("hei")
+                    b.Property<int>("beginX")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("label")
+                    b.Property<int>("beginY")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("posX")
+                    b.Property<int>("endX")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("posY")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("wid")
+                    b.Property<int>("endY")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("AnnotationID");
 
                     b.HasIndex("PhotoID");
 
@@ -134,8 +161,23 @@ namespace WebApplication1.Migrations
                     b.ToTable("User");
                 });
 
+            modelBuilder.Entity("WebApplication1.Models.Annotation", b =>
+                {
+                    b.HasOne("WebApplication1.Models.Project", "Project")
+                        .WithMany("Annotation")
+                        .HasForeignKey("ProjectID");
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("WebApplication1.Models.Label", b =>
                 {
+                    b.HasOne("WebApplication1.Models.Annotation", "Annotation")
+                        .WithMany()
+                        .HasForeignKey("AnnotationID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("WebApplication1.Models.Photo", "Photo")
                         .WithMany()
                         .HasForeignKey("PhotoID")
@@ -147,6 +189,8 @@ namespace WebApplication1.Migrations
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Annotation");
 
                     b.Navigation("Photo");
 
@@ -162,6 +206,11 @@ namespace WebApplication1.Migrations
                         .IsRequired();
 
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("WebApplication1.Models.Project", b =>
+                {
+                    b.Navigation("Annotation");
                 });
 #pragma warning restore 612, 618
         }

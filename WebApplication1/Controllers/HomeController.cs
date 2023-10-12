@@ -1,12 +1,13 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.Linq;
-using WebApplication1.Models;
 using WebApplication1.Araclar;
+using WebApplication1.Models;
 using WebApplication1.ViewModels;
 
 namespace WebApplication1.Controllers
@@ -16,7 +17,7 @@ namespace WebApplication1.Controllers
     {
         private readonly MyContext db;
         private readonly string rootPath;
-        
+
 
         public HomeController(MyContext db)
         {
@@ -24,74 +25,76 @@ namespace WebApplication1.Controllers
             this.db = db;
         }
 
-        public IActionResult Index(int? _imageNo, int? _seen)
+        public IActionResult Index()
         {
-            int seen = _seen ?? 0;
-            seen = Math.Clamp(seen, 0, 2);
-            ViewBag.seen = seen;
-
-            int imageNo = _imageNo ?? 1;
-            
-            int filesCount = db.Photo.Count();
-            if (filesCount == 0)
-            {
-                ViewBag.hata = "Veritabanında resim yok!";
-                return View();
-            }
-
-            Photo resim = new Photo();
-            switch (seen)
-            {
-                case 0:
-                    filesCount = db.Photo.Where(u => u.completed == false).Count();
-                    if (filesCount == 0)
-                    {
-                        ViewBag.hata = "Bu seçimde resim yok!";
-                        return View();
-                    }
-                    imageNo = Math.Clamp(imageNo, 1, filesCount);
-                    resim = db.Photo.Where(u => u.completed == false).Skip(imageNo - 1).FirstOrDefault();
-                    break;
-                case 1:
-                    filesCount = db.Photo.Where(u => u.completed == true).Count();
-                    if (filesCount == 0)
-                    {
-                        ViewBag.hata = "Bu seçimde resim yok!";
-                        return View();
-                    }
-                    imageNo = Math.Clamp(imageNo, 1, filesCount);
-                    resim = db.Photo.Where(u => u.completed == true).Skip(imageNo - 1).FirstOrDefault();
-                    break;
-                default:
-                    imageNo = Math.Clamp(imageNo, 1, filesCount);
-                    resim = db.Photo.Skip(imageNo-1).FirstOrDefault();
-                    break;
-            }
-
-            ViewBag.imageNo = imageNo;
-            ViewBag.filesCount = filesCount;
-
-            if (resim == null)
-            {
-                ViewBag.hata = "Öyle bir resim yok!";
-                return View();
-            }
-            else
-            {
-                ViewBag.path = Path.Combine(rootPath, resim.sysname);
-                ViewBag.imageID = resim.ID;
-            }
             return View();
         }
 
+        public IActionResult GetImagePath(NavigateViewModel model)
+        {
+            model.error = "";
+
+            int filesCount = db.Photo.Count();
+            if (filesCount == 0)
+            {
+                model.error = "Veritabanında resim yok!";
+                return Json(model);
+            }
+
+            model.imageNo = model.imageNo == 0 ? 1 : model.imageNo;
+
+            Photo photo = new Photo();
+            if(model.seen == null)
+            {
+                model.imageNo = Math.Clamp(model.imageNo, 1, filesCount);
+                photo = db.Photo.Skip(model.imageNo - 1).FirstOrDefault();
+            }
+            else
+            {
+                filesCount = db.Photo.Where(u => u.completed == model.seen).Count();
+                if (filesCount == 0)
+                {
+                    model.error = "Bu seçimde resim yok!";
+                    return Json(model);
+                }
+                model.imageNo = Math.Clamp(model.imageNo, 1, filesCount);
+                photo = db.Photo.Where(u => u.completed == false).Skip(model.imageNo - 1).FirstOrDefault();
+            }
+            
+
+            if (photo == null)
+            {
+                model.error = "Öyle bir resim yok!";
+                return Json(model);
+            }
+            else
+            {
+                model.path = Path.Combine(rootPath, photo.sysname);
+                model.imageID = photo.ID;
+                
+            }
+            return Json(model);
+        }
 
         [HttpGet]
-        public IActionResult GetLabels(int FotoID) =>
-            Json(db.Label.Where(u => u.PhotoID == FotoID).ToList());
-        
+        public IActionResult GetLabels(int FotoID)
+        {
+            List<Label> labelList = db.Label.Include(u=>u.Annotation).Where(u => u.PhotoID == FotoID).ToList();
+            List<LabelViewModel> lwm = new List<LabelViewModel>();
+            foreach (var item in labelList)
+            {
+                var n = new LabelViewModel()
+                {
+                    AnnotationID = item.AnnotationID,
+                    rectangle = new Rectangle() { beginX = item.beginX, beginY = item.beginY, endX = item.endX, endY = item.endY }
+                };
+                lwm.Add(n);
+            }
+            return Json(lwm);
+        }
 
         [HttpPost]
-        public IActionResult SetLabels(List<Label> labelList)
+        public IActionResult SetLabels(List<LabelViewModel> labelViewModel)
         {
             try
             {
@@ -99,7 +102,7 @@ namespace WebApplication1.Controllers
                 if (currentUser == null)
                     throw new Exception("Kullanıcı değilsiniz!");
 
-                int photoID = labelList.FirstOrDefault().PhotoID;
+                int photoID = labelViewModel.FirstOrDefault().photoID;
 
                 if (db.Label.Any(u => u.PhotoID == photoID))
                 {
@@ -109,22 +112,30 @@ namespace WebApplication1.Controllers
                 }
 
                 Photo photo = db.Photo.FirstOrDefault(u => u.ID == photoID);
-
-                if (labelList.Any())
+                
+                List<Label> labelList = new List<Label>();
+                foreach (var item in labelViewModel)
                 {
-                    labelList.ForEach(u => u.UserID = currentUser.ID);
-                    db.AddRange(labelList);
-                    db.SaveChanges();
+                    Annotation Annotation = db.Annotation.FirstOrDefault(u => u.ID == item.AnnotationID);
 
-                    photo.completed = true;
+                    Label label = new Label();
+                    label.Photo = photo;
+                    label.User = currentUser;
+                    label.Annotation = Annotation ;
+                    label.beginX = item.rectangle.beginX;
+                    label.beginY = item.rectangle.beginY;
+                    label.endX = item.rectangle.endX;
+                    label.endY = item.rectangle.endY;
+                    labelList.Add(label);
                 }
-                else
-                {
-                    photo.completed = false;
-                }
+                db.AddRange(labelList);
+                db.SaveChanges();
+
+                photo.completed = true;
                 db.Update(photo);
                 db.SaveChanges();
-                return Json("Tamam.");
+
+                return Json("ok");
             }
             catch (Exception e)
             {
@@ -132,18 +143,6 @@ namespace WebApplication1.Controllers
             }
         }
 
-
-        private User CurrentUser()
-        {
-            User user = HttpContext.Session.GetObject<User>("user");
-            return user;
-        }
-
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        private User CurrentUser() => HttpContext.Session.GetObject<User>("user");
     }
 }
