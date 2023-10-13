@@ -1,53 +1,65 @@
 ﻿@model IEnumerable<WebApplication1.Models.Project>
 
-@{
-    ViewData["Title"] = "Index";
-}
-
-<h1>Index</h1>
-
-<p>
-    <button onclick="GetCreateProjectForm()">Create New</button>
-</p>
-@foreach (var item in Model) {
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayFor(modelItem => item.name)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var anno in item.Annotation)
+<div class="container">
+    <h2>Projeler</h2>
+    <p>
+        <button onclick="GetCreateProjectForm()">Yeni Proje</button>
+    </p>
+    @if (Model.Any())
+    {
+        @foreach (var item in Model)
         {
-            <tr>
-                <td>
-                    @anno.name
-                </td>
-                <td>
-                    <span style="width:5em; color:@anno.color">&nbsp;</span>
-                </td>
-            </tr>
+            <div style="border: solid gray 2px; margin:1em; border-radius:1em; padding:1em">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Project Name: @Html.DisplayFor(modelItem => item.name)
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="min-width:5em;">
+                                Annoations:
+                                @foreach (var anno in item.annoList)
+                                {
+                                    <button style="border-radius:3px; color:@anno.textColor; background-color:@anno.color">@anno.name</button>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@item.ID">Edit</a> |
+                                <a onclick="DeleteMe(@item.ID)">Delete</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         }
-        <tr>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.ID">Edit</a> |
-                <a asp-action="Delete" asp-route-id="@item.ID">Delete</a>
-            </td>
-        </tr>
-    </tbody>
-</table>
-<br />
-}
-
+    }
+    else
+    {
+        <i>Henüz proje yok. Yeni bir proje yaratınız.</i>
+    }
+</div>    
 
 <script>
     function GetCreateProjectForm() {
         new OzAjax("/Projects/Create", GET, null, ShowForm).Send();
         function ShowForm(data) {
-            OzModal.Show("Proje Yarat",data);
+            OzModal.Show("Proje Yarat", data);
         }
     }
+
+    var IDwillDeleted = 0;
+    function DeleteMe(id) {
+        IDwillDeleted = id;
+        OzModal.
+    }
+    function DeleteMeConfirmed(id) {
+
+    }
+
 </script>

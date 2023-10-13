@@ -6,7 +6,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - WebApplication1</title>
+    <title> Etiketlendirtici </title>
     <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
     @await RenderSectionAsync("Styles", required: false)
@@ -24,8 +24,8 @@
             <a class="btn btn-sm btn-outline-warning" asp-action="Index" asp-controller="Projects">Projects</a>
             <a class="btn btn-sm btn-outline-warning" asp-action="Index" asp-controller="Uploader">Uploader</a>
         }
-        <a class="btn btn-sm btn-primary float-end" asp-action="Logout" asp-controller="Accounts" style="">Çıkış Yap</a>
-        <span class="float-end">Hoşgeldiniz @user.username</span>
+        <a class="btn btn-sm btn-primary float-end" asp-action="Logout" asp-controller="Accounts" style="margin-right:2em">Çıkış Yap</a>
+        <span class="float-end" style="margin-right:2em; font-family:'Times New Roman', Times, serif">Hoşgeldiniz @user.username</span>
     </div>
 
     <div>

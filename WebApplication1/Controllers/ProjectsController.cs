@@ -23,7 +23,7 @@ namespace WebApplication1.Controllers
         
         public IActionResult Index()
         {
-            return View(db.Project.Include(u=>u.Annotation).ToList());
+            return View(db.Project.Include(u=>u.annoList).ToList());
         }
 
         public IActionResult Create()
@@ -32,7 +32,6 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Create(Project project)
         {
             try
@@ -55,7 +54,7 @@ namespace WebApplication1.Controllers
         
         public IActionResult Edit(int id)
         {
-            var proje = db.Project.Include(u=>u.Annotation).FirstOrDefault(u=>u.ID ==  id);
+            var proje = db.Project.Include(u=>u.annoList).FirstOrDefault(u=>u.ID ==  id);
             if (proje == null)
             {
                 return Json("Proje bulunamadı!");
@@ -83,8 +82,9 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var proje = db.Project.Include(u=>u.Annotation).FirstOrDefault(u => u.ID == id);
+                var proje = db.Project.Include(u=>u.annoList).FirstOrDefault(u => u.ID == id);
                 db.Remove(proje);
+                db.SaveChanges();
                 return Json("ok");
             }
             catch (Exception e)

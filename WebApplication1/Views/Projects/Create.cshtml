@@ -20,11 +20,12 @@ Etiketler:
     <button class="btn btn-sm btn-secondary" onclick="AddAnnoation()" >Ekle</button>
 </div>
 <hr />
-<button class="btn btn-success">Kaydet</button>
+<button class="btn btn-success" onclick="SaveProject()">Kaydet</button>
 
 <script>
 
     var annoList = [];
+
     function AddAnnoation() {
         var anno = {};
         anno.name = $("#annoName").val();
@@ -38,21 +39,40 @@ Etiketler:
         $("#annoName").val("");
         $("#color").val("");
     }
+
     function UpdateAnnoations() {
         $("#annotationList").empty();
 
         for (var i = 0; i < annoList.length; i++) {
-            var li = $("<div>");
-            li.css({ "background-color": annoList[i].color, "color":annoList[i].textColor, "margin":"1em" });
+            var oDiv = $("<div>");
+            oDiv.css({ "background-color": annoList[i].color, "color":annoList[i].textColor, "margin":"1em", "min-height":"2em"});
             
-            li.append($("<span>").html(annoList[i].name));
-            li.append($("<button>").html("X").css({"float":"right"}).click(function () { deleteMe(i) }));
-            $("#annotationList").append(li);
+            oDiv.append($("<span>").html(annoList[i].name));
+            let j = Number(i);
+            oDiv.append($("<button>").html("X").css({"float":"right", "border-radius":"5px"}).click(function () { deleteMe(j) }));
+            $("#annotationList").append(oDiv);
         }
         function deleteMe(n) {
             console.log("siliyorum bunu: ", n);
             annoList.splice(n, 1);
             UpdateAnnoations();
+        }
+    }
+
+    function SaveProject() {
+        let name = $("#name").val();
+        if (name.length < 3) {
+            alert("En az 3 harfli proje adı giriniz!");
+            return;
+        }
+        if (annoList.length < 1) {
+            alert("Etiket listesi boş olamaz!");
+            return;
+        }
+        let project = { name: name, annoList: annoList };
+        new OzAjax("/Projects/Create", POST, { project: project }, SaveProjectSuccess).Send();
+        function SaveProjectSuccess(data) {
+            OzModal.Info(data, 1200);
         }
     }
 
