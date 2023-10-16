@@ -72,7 +72,8 @@ Etiketler:
         let project = { name: name, annoList: annoList };
         new OzAjax("/Projects/Create", POST, { project: project }, SaveProjectSuccess).Send();
         function SaveProjectSuccess(data) {
-            OzModal.Info(data, 1200);
+            OzModal.Info("", data, 1200);
+            setTimeout(function () { window.location.reload(true) }, 1200);
         }
     }
 

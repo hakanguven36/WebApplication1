@@ -30,8 +30,10 @@
                         </tr>
                         <tr>
                             <td>
-                                <a asp-action="Edit" asp-route-id="@item.ID">Edit</a> |
-                                <a onclick="DeleteMe(@item.ID)">Delete</a>
+                                <div class="btn-group-sm">
+                                    <button class="btn btn-sm btn-outline-warning">Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="DeleteMe(@item.ID)">Delete</button>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -56,10 +58,14 @@
     var IDwillDeleted = 0;
     function DeleteMe(id) {
         IDwillDeleted = id;
-        OzModal.
+        OzModal.Confirmer("Bu proje silinecek! Onaylıyor musunuz?", "Sil", "İptal", "btn-danger", "btn-secondary", DeleteMeConfirmed);
     }
-    function DeleteMeConfirmed(id) {
-
+    function DeleteMeConfirmed() {
+        new OzAjax("/Projects/Delete", POST, { id: IDwillDeleted }, DeleteSuccess).Send();
+        function DeleteSuccess(data) {
+            OzModal.Info("", data, 1200);
+            setTimeout(function () { window.location.reload(true) }, 1200);
+        }
     }
 
 </script>

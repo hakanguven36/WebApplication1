@@ -1,34 +1,84 @@
 ﻿@model WebApplication1.Models.Project
-
-@{
-    ViewData["Title"] = "Edit";
+@{ 
+    string annolist = Json.Serialize(Model.annoList).ToString();
 }
 
-<h1>Edit</h1>
 
-<h4>Proje</h4>
+<label for="name">Proje Adı</label>
+<input class="form-control" id="name" name="name" value="@Model.name" />
+
 <hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="ID" />
-            <div class="form-group">
-                <label asp-for="name" class="control-label"></label>
-                <input asp-for="name" class="form-control" />
-                <span asp-validation-for="name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
+Etiketler:
+<br />
+<div id="annotationList">
+    <li style="color:gray">Lütfen etiket ekleyiniz...</li>
 </div>
+<div style="vertical-align:middle; border:solid 1px gray; border-radius:1em; padding:1em;">
+    <label for="annoName">Etiket Ekle</label>
+    <input id="annoName" />
 
-<div>
-    <a asp-action="Index">Back to List</a>
+    <input type="color" id="color" style="vertical-align:middle" />
+
+    <button class="btn btn-sm btn-secondary" onclick="AddAnnoation()">Ekle</button>
 </div>
+<hr />
+<button class="btn btn-success" onclick="SaveProject()">Kaydet</button>
 
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+<script>
+
+    var annoList = [];
+
+    function AddAnnoation() {
+        var anno = {};
+        anno.name = $("#annoName").val();
+        anno.color = $("#color").val();
+        if (isDarkBackground(anno.color))
+            anno.textColor = "#EEEEEE";
+        else
+            anno.textColor = "#000000";
+        annoList.push(anno);
+        UpdateAnnoations();
+        $("#annoName").val("");
+        $("#color").val("");
+    }
+
+    function UpdateAnnoations() {
+        $("#annotationList").empty();
+
+        for (var i = 0; i < annoList.length; i++) {
+            var oDiv = $("<div>");
+            oDiv.css({ "background-color": annoList[i].color, "color":annoList[i].textColor, "margin":"1em", "min-height":"2em"});
+
+            oDiv.append($("<span>").html(annoList[i].name));
+            let j = Number(i);
+            oDiv.append($("<button>").html("X").css({"float":"right", "border-radius":"5px"}).click(function () { deleteMe(j) }));
+            $("#annotationList").append(oDiv);
+        }
+        function deleteMe(n) {
+            console.log("siliyorum bunu: ", n);
+            annoList.splice(n, 1);
+            UpdateAnnoations();
+        }
+    }
+
+    function SaveProject() {
+        let name = $("#name").val();
+        if (name.length < 3) {
+            alert("En az 3 harfli proje adı giriniz!");
+            return;
+        }
+        if (annoList.length < 1) {
+            alert("Etiket listesi boş olamaz!");
+            return;
+        }
+        let project = { name: name, annoList: annoList };
+        new OzAjax("/Projects/Create", POST, { project: project }, SaveProjectSuccess).Send();
+        function SaveProjectSuccess(data) {
+            OzModal.Info("", data, 1200);
+            setTimeout(function () { window.location.reload(true) }, 1200);
+        }
+    }
+
+</script>
+
+

@@ -44,7 +44,7 @@ namespace WebApplication1.Controllers
                 db.Add(project);
                 db.SaveChanges();
 
-                return Json("ok");
+                return Json("Proje oluşturuldu.");
             }
             catch(Exception e)
             {
@@ -70,7 +70,7 @@ namespace WebApplication1.Controllers
             {
                 db.Update(proje);
                 db.SaveChanges();
-                return Json("ok");
+                return Json("Değişiklikler uygulandı.");
             }
             catch (Exception e)
             {
@@ -85,7 +85,7 @@ namespace WebApplication1.Controllers
                 var proje = db.Project.Include(u=>u.annoList).FirstOrDefault(u => u.ID == id);
                 db.Remove(proje);
                 db.SaveChanges();
-                return Json("ok");
+                return Json("Silindi.");
             }
             catch (Exception e)
             {

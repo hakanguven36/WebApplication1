@@ -198,4 +198,31 @@ function OZMODAL() {
     }
 }
 
+OZMODAL.prototype.Confirmer = function (question, answer1, answer2, ansclass1, ansclass2, confirmCcallback) {
+    var questionDiv = $("<h3>").html(question);
+    var answer1Btn = $("<button>").addClass("btn " + ansclass1).html(answer1).click(confirmCcallback);
+    var answer2Btn = $("<button>").addClass("btn " + ansclass2).html(answer2).click(this.Close);
+    var buttonsPanel = $("<div>");
+    var confirmerBody = $("<div>");
+
+    confirmerBody.append(questionDiv);
+    buttonsPanel.append(answer1Btn);
+    buttonsPanel.append(answer2Btn);
+    confirmerBody.append(buttonsPanel);
+    this.Show("Sorulur", confirmerBody);
+}
+
 var OzModal = new OZMODAL();
+
+
+/*
+ function tryMe(param1, param2) {
+  alert(param1 + " and " + param2);
+}
+
+function callbackTester(callback) {
+  callback(arguments[1], arguments[2]);
+}
+
+callbackTester(tryMe, "hello", "goodbye");
+ */
