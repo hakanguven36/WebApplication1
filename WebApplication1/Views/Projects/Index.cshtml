@@ -31,7 +31,7 @@
                         <tr>
                             <td>
                                 <div class="btn-group-sm">
-                                    <button class="btn btn-sm btn-outline-warning">Edit</button>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="EditMe(@item.ID)">Edit</button>
                                     <button class="btn btn-sm btn-outline-danger" onclick="DeleteMe(@item.ID)">Delete</button>
                                 </div>
                             </td>
@@ -52,6 +52,13 @@
         new OzAjax("/Projects/Create", GET, null, ShowForm).Send();
         function ShowForm(data) {
             OzModal.Show("Proje Yarat", data);
+        }
+    }
+
+    function EditMe(id) {
+        new OzAjax("/Projects/Edit", GET, { id: id }, EditFormSuccess).Send();
+        function EditFormSuccess(data) {
+            OzModal.Show("Proje Düzenle", data);
         }
     }
 

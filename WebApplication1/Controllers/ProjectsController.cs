@@ -5,8 +5,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using WebApplication1.Araclar;
 using WebApplication1.Models;
+using System.Text.Json;
 
 namespace WebApplication1.Controllers
 {
@@ -52,23 +54,33 @@ namespace WebApplication1.Controllers
             }
         }
         
+        [HttpGet]
         public IActionResult Edit(int id)
         {
-            var proje = db.Project.Include(u=>u.annoList).FirstOrDefault(u=>u.ID ==  id);
+            var proje = db.Project.FirstOrDefault(u=>u.ID ==  id);
             if (proje == null)
             {
                 return Json("Proje bulunamadı!");
             }
-            return Json(proje);
+            
+            return PartialView(proje);
+        }
+        public IActionResult GetAnnoList(int id)
+        {
+            List<Annotation> annoList = db.Annotation.Where(u => u.ProjectID == id).ToList();
+            return Json(annoList);
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Edit(Project proje)
+        public IActionResult Edit(Project project)
         {
             try
             {
-                db.Update(proje);
+                var listToDelete = db.Annotation.Where(u => u.ProjectID == project.ID);
+                db.RemoveRange(listToDelete);
+                db.SaveChanges();
+
+                db.Update(project);
                 db.SaveChanges();
                 return Json("Değişiklikler uygulandı.");
             }

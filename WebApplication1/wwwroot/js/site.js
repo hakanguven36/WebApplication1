@@ -19,10 +19,10 @@ OzAjax.prototype.Send = function () {
         data: this.sendData,
         dataType: "text",
         success: function (data) {
-            if (isHtmlSayfasi(data)) {
-                window.location = "/Home/Index?scrlp=login";
-                return;
-            }
+            //if (isHtmlSayfasi(data)) {
+            //    window.location = "/Home/Index?scrlp=login";
+            //    return;
+            //}
 
             if (that.CallBackSuccess != null)
                 that.CallBackSuccess(data);

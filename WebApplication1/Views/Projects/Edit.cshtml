@@ -1,8 +1,7 @@
 ﻿@model WebApplication1.Models.Project
-@{ 
-    string annolist = Json.Serialize(Model.annoList).ToString();
-}
 
+
+<input type="hidden" id="ID" value="@Model.ID" />
 
 <label for="name">Proje Adı</label>
 <input class="form-control" id="name" name="name" value="@Model.name" />
@@ -24,9 +23,24 @@ Etiketler:
 <hr />
 <button class="btn btn-success" onclick="SaveProject()">Kaydet</button>
 
+<input type="hidden" id="annoList" value="@ViewBag.annoList" />
+
 <script>
 
     var annoList = [];
+    
+
+    $(document).ready(function () {
+        GetAnnoList();        
+    });
+
+    function GetAnnoList() {
+        new OzAjax("/Projects/GetAnnoList", GET, { id: $("#ID").val() }, GetListSuccess).Send();
+        function GetListSuccess(data) {
+            annoList = JSON.parse(data);
+            UpdateAnnoations();
+        }
+    }
 
     function AddAnnoation() {
         var anno = {};
@@ -62,6 +76,7 @@ Etiketler:
     }
 
     function SaveProject() {
+        let ID = $("#ID").val();
         let name = $("#name").val();
         if (name.length < 3) {
             alert("En az 3 harfli proje adı giriniz!");
@@ -71,8 +86,8 @@ Etiketler:
             alert("Etiket listesi boş olamaz!");
             return;
         }
-        let project = { name: name, annoList: annoList };
-        new OzAjax("/Projects/Create", POST, { project: project }, SaveProjectSuccess).Send();
+        let project = { ID: ID, name: name, annoList: annoList };
+        new OzAjax("/Projects/Edit", POST, { project: project }, SaveProjectSuccess).Send();
         function SaveProjectSuccess(data) {
             OzModal.Info("", data, 1200);
             setTimeout(function () { window.location.reload(true) }, 1200);
@@ -80,5 +95,3 @@ Etiketler:
     }
 
 </script>
-
-
