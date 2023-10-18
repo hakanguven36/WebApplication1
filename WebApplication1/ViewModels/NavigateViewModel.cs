@@ -7,6 +7,7 @@ namespace WebApplication1.ViewModels
 {
     public class NavigateViewModel
     {
+        public int projectID { get; set; }
         public int imageID { get; set; }
         public int imageNo { get; set; }
         public bool? seen { get; set; } // or completed

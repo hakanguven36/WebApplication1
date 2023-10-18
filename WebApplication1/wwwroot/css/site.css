@@ -24,6 +24,10 @@ a {
   border-color: #1861ac;
 }
 
+body, html {
+    height: 100%;
+}
+
 /* Sticky footer styles
 -------------------------------------------------- */
 html {

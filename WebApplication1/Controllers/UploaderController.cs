@@ -70,7 +70,7 @@ namespace WebApplication1.Controllers
                     int formProjeID = int.Parse(form["projectID"].tooString());
                     photo.Project = db.Project.FirstOrDefault(u => u.ID == formProjeID);
                     photo.contentType = contentType;
-                    photo.sizekb = lenght / 1024;
+                    photo.sizeMB = lenght / (1024.0 * 1024.0);
                     photo.orjname = fileName;
                     photo.extention = Path.GetExtension(fileName);
                     photo.date = DateTime.Now;

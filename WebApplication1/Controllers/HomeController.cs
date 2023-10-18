@@ -30,6 +30,11 @@ namespace WebApplication1.Controllers
             return View();
         }
 
+        public IActionResult GetProjectList()
+        {
+            return Json(db.Project.Include(u => u.annoList).ToList());
+        }
+
         public IActionResult GetImagePath(NavigateViewModel model)
         {
             model.error = "";

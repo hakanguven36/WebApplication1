@@ -20,7 +20,7 @@ namespace WebApplication1.Models
 
         public string contentType { get; set; }
 
-        public double sizekb { get; set; }
+        public double sizeMB { get; set; }
 
         public string imageFormat { get; set; }
 

@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title> Etiketlendirtici </title>
     <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 
     <script src="~/lib/jquery/jquery.js"></script>
@@ -17,17 +17,18 @@
     @await RenderSectionAsync("Scripts", required: false)
 </head>
 <body>
-    <div>
+    <div style="background-color:rgb(50,50,50)">
         @if (user.admin)
         {
             <a class="btn btn-sm btn-outline-warning" asp-action="Index" asp-controller="Users">Users</a>
             <a class="btn btn-sm btn-outline-warning" asp-action="Index" asp-controller="Projects">Projects</a>
             <a class="btn btn-sm btn-outline-warning" asp-action="Index" asp-controller="Uploader">Uploader</a>
+            <a class="btn btn-sm btn-outline-warning" asp-action="Index" asp-controller="Home">Etiketleme</a>
         }
         <a class="btn btn-sm btn-primary float-end" asp-action="Logout" asp-controller="Accounts" style="margin-right:2em">Çıkış Yap</a>
-        <span class="float-end" style="margin-right:2em; font-family:'Times New Roman', Times, serif">Hoşgeldiniz @user.username</span>
+        <span class="float-end" style="color:white; margin-right:2em; font-family:'Times New Roman', Times, serif">Hoşgeldiniz @user.username</span>
     </div>
-
+    
     <div>
         @RenderBody()
     </div>
