@@ -117,6 +117,9 @@ function OzGetCookie(cname) {
     }
     return "";
 }
+function OzDelCookie(cname) {
+    document.cookie = cname + "=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path=/";
+}
 
 Number.prototype.clamp = function (min, max) {
     return Math.min(Math.max(this, min), max);

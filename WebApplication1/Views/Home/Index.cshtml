@@ -34,21 +34,26 @@
         border-radius: 2px;
         text-align: center;
     }
+
     .annoBtn {
         width: 100%;
-        border:solid 1px;
+        border: solid 1px;
         border-radius: 5px;
         margin-top: 0.4em;
         margin-bottom: 0.4em;
     }
+
     #annoListDiv {
         border-right: solid 1px gray;
         border-bottom: solid 1px gray;
     }
 </style>
 
+<input type="hidden" id="selectedProjectID" value="@ViewBag.selectedProjectID" />
+
+
 <div class="navigationPanel" id="navigationPanel">
-    <select id="projectList">
+    <select id="projectList" onchange="SelectProject($(this).val())">
         <option style="color:gray; font-style:italic">Proje Seçiniz...</option>
     </select>
     <span>
@@ -57,9 +62,9 @@
     <button class="btnNavi" onclick="Navigate(false)">< önceki</button>
     <button class="btnNavi" onclick="Navigate(true)">sonraki ></button>
     <select id="seen" class="form-control-sm">
-        <option value="0">İşlenmemişler</option>
-        <option value="1">İşlenmişler</option>
-        <option value="2">Tamamı</option>
+        <option value="1">İşlenmemişler</option>
+        <option value="2">İşlenmişler</option>
+        <option value="3">Tamamı</option>
     </select>
     <button class="btn btn-sm btn-outline-danger" onclick="DeletePhoto()"> Resmi Sil </button>
     <button class="btn btn-outline-success" onclick="Completed()">Değişiklikleri Kaydet</button>
@@ -71,17 +76,19 @@
     &nbsp;&nbsp;&nbsp;&nbsp;
     <span class="sizeBtnBorder">
         <span class="sizeBtn" onclick="ChangeCanvasSize(false)">-</span>
-        <span class="sizeBtn" id="csize"></span>
+        <span class="sizeBtn" id="csize" style="background-color:lightgray"></span>
         <span class="sizeBtn" onclick="ChangeCanvasSize(true)">+</span>
     </span>
+    <button onclick="OzDelCookie('preferences')">çerez sil</button>
 </div>
 <div class="row" style="height: 100%">
-    <div id="annoListDiv" class="col-sm-1">
+    <div id="annoListDiv" class="col-1">
         <center>
             <u>Sınıflar</u>
-        </center>        
+        </center>
     </div>
-    <div>
+    <div class="col">
+        <div id="error" class="text-bg-danger"></div>
         <canvas id="canvas"></canvas>
     </div>
 </div>
@@ -89,20 +96,62 @@
 
 
 <script>
-    var annoList = [];
     class Preferences {
-        projectID = 1;
         shape = 0;
-        selectedAnno = 0;
+        selectedAnno = -1;
         csize = 1000;
         lastImageNo = 1;
+        seen = 3;
     }
+    class NavigateViewModel {
+        projectID;
+        imageID;
+        imageNo;
+        seen;
+        filesCount;
+        path;
+        error;
+    }
+    var navi = new NavigateViewModel();
+
+    var annoList = [];
+    var selectedProjectID = Number($("#selectedProjectID").val());
     var preferences = new Preferences();
 
     $(document).ready(function () {
-        CheckPreferences();
         GetProjectList();
+        CheckPreferences();
+        InitNavigation();
+        GetImage();
     });
+    function InitNavigation() {
+        if (selectedProjectID != 0) {
+            navi.projectID = selectedProjectID;
+            navi.imageNo = preferences.lastImageNo;
+            navi.seen = preferences.seen;
+        }
+    }
+    function GetImage() {
+        if (selectedProjectID == 0) {
+            $("#error").html("Bir proje seçiniz.");
+            return;
+        }
+        new OzAjax("/Home/GetImage", POST, { navi: navi }, NaviSendSuccess).Send();
+        function NaviSendSuccess(data) {
+            navi = JSON.parse(data);
+            if (navi.error != "") {
+                $("#error").html(navi.error);
+            }
+            else {
+                console.log(JSON.stringify(data));
+            }
+        }
+    }
+
+    function SelectProject(pid) {
+        pid = Number(pid);
+        window.location = "/?projectID=" + pid;
+    }
 
     function GetProjectList() {
         new OzAjax("/Home/GetProjectList", GET, null, ProjectListSuccess).Send();
@@ -110,8 +159,8 @@
             data = JSON.parse(data);
             let projectList = document.getElementById("projectList");
             for (var i = 0; i < data.length; i++) {
-                let option = new Option(data[i].name, data[i].ID);
-                if (preferences.projectID == data[i].ID) {
+                let option = new Option(data[i].name, data[i].id);
+                if (selectedProjectID == data[i].id) {
                     option.selected = true;
                     annoList = data[i].annoList;
                     PlaceAnnoList();
@@ -121,6 +170,7 @@
         }
     }
     function PlaceAnnoList() {
+
         for (var i = 0; i < annoList.length; i++) {
             let btn = $("<button>");
             btn.html(annoList[i].name);
@@ -141,7 +191,6 @@
         SavePreferences();
         PaintAnnoBtns();
     }
-
     function PaintAnnoBtns() {
         $(".annoBtn").each(function (i, e) {
             if (i == preferences.selectedAnno) {
@@ -161,63 +210,69 @@
             }
         });
     }
-    
-    function CanvasSizeUpdate(_csize) {
-        if (_csize != null) {
-            preferences.csize = _csize;
-            SavePreferences();
-        }
-        $("#csize").html(preferences.csize + "px");
-    }
-    function ChangeCanvasSize(incr) {
-        if (incr)
-            CanvasSizeUpdate(preferences.csize + 50);
-        else
-            CanvasSizeUpdate(preferences.csize - 50);
-    }
 
     function CheckPreferences() {
         let p = OzGetCookie("preferences");
-        if (p != "") {
+        console.log("p=>", p);
+        if (p == "") {
+            SavePreferences();
+        }
+        else {
+            console.log("p null değildir..");
             preferences = JSON.parse(p);
             ShapeUpdate();
             CanvasSizeUpdate();
-            /*...*/
-        }
-        else {
-            SavePreferences();
+            SeenUpdate();
         }
     }
     function SavePreferences() {
         OzSetCookie("preferences", JSON.stringify(preferences));
     }
-    
+
+
+    function ChangeSeen() {
+        preferences.seen = Number($("#seen").val());
+        SavePreferences();
+        InitNavigation();
+        GetImage();
+    }
+    function SeenUpdate() {
+        $("#seen").val(preferences.seen);
+    }
+
+    function ChangeCanvasSize(incr) {
+        if (incr) {
+            preferences.csize += 50;
+            SavePreferences();
+            CanvasSizeUpdate();
+        }
+        else {
+            preferences.csize -= 50;
+            SavePreferences();
+            CanvasSizeUpdate();
+        }
+    }
+    function CanvasSizeUpdate() {
+        $("#csize").html(preferences.csize + "px");
+    }
+
+
+
     // #region Trigers
     $(".spnShape").click(function () {
         let shapeNo = Number($(this).data("shape"));
         preferences.shape = shapeNo;
         SavePreferences();
-
-        ShapeUpdate(shapeNo);
+        ShapeUpdate();
     });
     // #endregion
 
-    function ChangeCanvasSize() {
-
-    }
-
-    function Navigate() {
-
-    }
-
-    function ShapeUpdate(shapeNo) {
-        if (shapeNo == null)
-            shapeNo = preferences.shape;
+    function ShapeUpdate() {
         $(".spnShape").removeClass("spnShapeSelected");
-        $("*[data-shape=" + shapeNo + "]").addClass("spnShapeSelected");
+        $("*[data-shape=" + preferences.shape + "]").addClass("spnShapeSelected");
     }
 
 
 
-    
+
 </script>

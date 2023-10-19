@@ -25,8 +25,11 @@ namespace WebApplication1.Controllers
             this.db = db;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(int? projectID)
         {
+            if(projectID != null)
+                HttpContext.Session.SetInt32("selectedProjectID", projectID??0);
+            ViewBag.selectedProjectID = HttpContext.Session.GetInt32("selectedProjectID");
             return View();
         }
 
@@ -35,50 +38,58 @@ namespace WebApplication1.Controllers
             return Json(db.Project.Include(u => u.annoList).ToList());
         }
 
-        public IActionResult GetImagePath(NavigateViewModel model)
+        public IActionResult GetImage(NavigateViewModel navi)
         {
-            model.error = "";
+            navi.error = "";
+            int projectID = navi.projectID;
 
-            int filesCount = db.Photo.Count();
-            if (filesCount == 0)
+            switch (navi.seen)
             {
-                model.error = "Veritabanında resim yok!";
-                return Json(model);
+                case 1:
+                    navi.filesCount = db.Photo.Where(u => u.ProjectID == projectID).Where(u => u.completed == false).Count();
+                    break;
+                case 2:
+                    navi.filesCount = db.Photo.Where(u => u.ProjectID == projectID).Where(u => u.completed == true).Count();
+                    break;
+                case 3:
+                    navi.filesCount = db.Photo.Where(u => u.ProjectID == projectID).Count();
+                    break;
             }
 
-            model.imageNo = model.imageNo == 0 ? 1 : model.imageNo;
+            if (navi.filesCount == 0)
+            {
+                navi.error = "Veritabanında resim yok!";
+                return Json(navi);
+            }
+
 
             Photo photo = new Photo();
-            if(model.seen == null)
+            switch (navi.seen)
             {
-                model.imageNo = Math.Clamp(model.imageNo, 1, filesCount);
-                photo = db.Photo.Skip(model.imageNo - 1).FirstOrDefault();
+                case 1:
+                    navi.imageNo = Math.Clamp(navi.imageNo, 1, navi.filesCount);
+                    photo = db.Photo.Where(u => u.ProjectID == projectID).Where(u => u.completed == false).Skip(navi.imageNo - 1).FirstOrDefault();
+                    break;
+                case 2:
+                    navi.imageNo = Math.Clamp(navi.imageNo, 1, navi.filesCount);
+                    photo = db.Photo.Where(u => u.ProjectID == projectID).Where(u => u.completed == true).Skip(navi.imageNo - 1).FirstOrDefault();
+                    break;
+                case 3:
+                    navi.imageNo = Math.Clamp(navi.imageNo, 1, navi.filesCount);
+                    photo = db.Photo.Where(u => u.ProjectID == projectID).Skip(navi.imageNo - 1).FirstOrDefault();
+                    break;
             }
-            else
-            {
-                filesCount = db.Photo.Where(u => u.completed == model.seen).Count();
-                if (filesCount == 0)
-                {
-                    model.error = "Bu seçimde resim yok!";
-                    return Json(model);
-                }
-                model.imageNo = Math.Clamp(model.imageNo, 1, filesCount);
-                photo = db.Photo.Where(u => u.completed == false).Skip(model.imageNo - 1).FirstOrDefault();
-            }
-            
 
             if (photo == null)
             {
-                model.error = "Öyle bir resim yok!";
-                return Json(model);
+                navi.error = "Öyle bir resim yok!";
+                return Json(navi);
             }
-            else
-            {
-                model.path = Path.Combine(rootPath, photo.sysname);
-                model.imageID = photo.ID;
-                
-            }
-            return Json(model);
+
+            navi.path = Path.Combine(rootPath, photo.sysname);
+            navi.imageID = photo.ID;
+
+            return Json(navi);
         }
 
         [HttpGet]
