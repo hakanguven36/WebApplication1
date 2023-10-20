@@ -96,6 +96,25 @@
 
 
 <script>
+    /*
+     GÖREVLER
+     => document-ready olduğunda
+     => GetProjectList() ile projeleri çek
+     => Session'da selectedProjectId yok ise hata "proje seçin" yaz ve kal...
+            var ise:
+     => Proje sınıflarını doldur
+     => OzGetCookies ile preferences'ı doldur.
+     => preferences'a bağlı olarak sayfadaki elementleri biçimlendir.
+     => preferences'a bağlı olarak GetImage() ile resmi çek.
+
+    => Proje seçiminde Index?id=... ile sayfayı yenile ve Session.selectedPr.ID değişmiş oldu.
+
+    => navigasyon işleminde GetImage() çalışacak.
+
+
+     
+     
+     */
     class Preferences {
         shape = 0;
         selectedAnno = -1;
@@ -103,6 +122,7 @@
         lastImageNo = 1;
         seen = 3;
     }
+    var preferences = new Preferences();
     class NavigateViewModel {
         projectID;
         imageID;
@@ -114,9 +134,8 @@
     }
     var navi = new NavigateViewModel();
 
-    var annoList = [];
     var selectedProjectID = Number($("#selectedProjectID").val());
-    var preferences = new Preferences();
+    var annoList = [];
 
     $(document).ready(function () {
         GetProjectList();

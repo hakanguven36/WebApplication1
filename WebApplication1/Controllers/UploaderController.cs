@@ -17,6 +17,17 @@ namespace WebApplication1.Controllers
     [Yetki("admin")]
     public class UploaderController : Controller
     {
+        private const int OrientationKey = 0x0112;
+        private const int NotSpecified = 0;
+        private const int NormalOrientation = 1;
+        private const int MirrorHorizontal = 2;
+        private const int UpsideDown = 3;
+        private const int MirrorVertical = 4;
+        private const int MirrorHorizontalAndRotateRight = 5;
+        private const int RotateLeft = 6;
+        private const int MirorHorizontalAndRotateLeft = 7;
+        private const int RotateRight = 8;
+
         private readonly MyContext db;
         string rootPath = "";
 
@@ -59,8 +70,8 @@ namespace WebApplication1.Controllers
                     using (Stream stream = new MemoryStream()) { 
                         file.CopyTo(stream);
                         Image orjImage = new Bitmap(stream);
-                        Image image1024 = ResizeTo1280w(orjImage);
-                        image1024.Save(Path.Combine(rootPath, sysname));
+                        //Image image1024 = ResizeTo1280w(orjImage);
+                        orjImage.Save(Path.Combine(rootPath, sysname));
 
                         Image thumb = ResizeImage(orjImage, new Size(200,200));
                         thumb.Save(Path.Combine(rootPath, "thumbs", sysname));
@@ -134,6 +145,47 @@ namespace WebApplication1.Controllers
             g.InterpolationMode = InterpolationMode.Bicubic;
             // Draw image with new width and height
             g.DrawImage(imgToResize, 0, 0, destWidth, destHeight);
+
+            #region Orientation Fix
+            // Fix orientation if needed.
+            /*
+            if (imgToResize.PropertyIdList.Contains(OrientationKey))
+            {
+                var orientation = (int)imgToResize.GetPropertyItem(OrientationKey).Value[0];
+                switch (orientation)
+                {
+                    case NotSpecified: // Assume it is good.
+                    case NormalOrientation:
+                        // No rotation required.
+                        break;
+                    case MirrorHorizontal:
+                        b.RotateFlip(RotateFlipType.RotateNoneFlipX);
+                        break;
+                    case UpsideDown:
+                        b.RotateFlip(RotateFlipType.Rotate180FlipNone);
+                        break;
+                    case MirrorVertical:
+                        b.RotateFlip(RotateFlipType.Rotate180FlipX);
+                        break;
+                    case MirrorHorizontalAndRotateRight:
+                        b.RotateFlip(RotateFlipType.Rotate90FlipX);
+                        break;
+                    case RotateLeft:
+                        b.RotateFlip(RotateFlipType.Rotate90FlipNone);
+                        break;
+                    case MirorHorizontalAndRotateLeft:
+                        b.RotateFlip(RotateFlipType.Rotate270FlipX);
+                        break;
+                    case RotateRight:
+                        b.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                        break;
+                    default:
+                        throw new NotImplementedException("An orientation of " + orientation + " isn't implemented.");
+                }
+            }
+            */
+            #endregion
+
             g.Dispose();
             return (Image)b;
         }
