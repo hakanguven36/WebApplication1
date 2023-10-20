@@ -25,16 +25,18 @@ namespace WebApplication1.Controllers
             this.db = db;
         }
 
-        public IActionResult Index(int? projectID)
+        public IActionResult Index()
         {
-            if(projectID != null)
-                HttpContext.Session.SetInt32("selectedProjectID", projectID??0);
-            ViewBag.selectedProjectID = HttpContext.Session.GetInt32("selectedProjectID");
+            int projectID = HttpContext.Session.GetInt32("projectID")??0;
+            if (projectID != 0)
+                ViewBag.projectID = projectID;
             return View();
         }
 
-        public IActionResult GetProjectList()
+        public IActionResult GetProjectList(int projectID)
         {
+            if(projectID != 0)
+                HttpContext.Session.SetInt32("projectID", projectID);
             return Json(db.Project.Include(u => u.annoList).ToList());
         }
 
@@ -42,6 +44,15 @@ namespace WebApplication1.Controllers
         {
             navi.error = "";
             int projectID = navi.projectID;
+            if(projectID == 0)
+            {
+                navi.error = "Proje ID boş olamaz!";
+                navi.path = "";
+                navi.filesCount = 0;
+                navi.imageID = 0;
+                navi.imageNo = 0;
+                return Json(navi);
+            }
 
             switch (navi.seen)
             {
@@ -58,10 +69,13 @@ namespace WebApplication1.Controllers
 
             if (navi.filesCount == 0)
             {
-                navi.error = "Veritabanında resim yok!";
+                navi.error = "Bu bağlamda resim bulunmamaktadır!";
+                navi.path = "";
+                navi.filesCount = 0;
+                navi.imageID = 0;
+                navi.imageNo = 0;
                 return Json(navi);
             }
-
 
             Photo photo = new Photo();
             switch (navi.seen)
@@ -82,7 +96,11 @@ namespace WebApplication1.Controllers
 
             if (photo == null)
             {
-                navi.error = "Öyle bir resim yok!";
+                navi.error = "Bu sınırlar içinde resim yoktur. Sistem hatası olabilir!";
+                navi.path = "";
+                navi.filesCount = 0;
+                navi.imageID = 0;
+                navi.imageNo = 0;
                 return Json(navi);
             }
 

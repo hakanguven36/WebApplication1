@@ -218,14 +218,3 @@ OZMODAL.prototype.Confirmer = function (question, answer1, answer2, ansclass1, a
 var OzModal = new OZMODAL();
 
 
-/*
- function tryMe(param1, param2) {
-  alert(param1 + " and " + param2);
-}
-
-function callbackTester(callback) {
-  callback(arguments[1], arguments[2]);
-}
-
-callbackTester(tryMe, "hello", "goodbye");
- */
