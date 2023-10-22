@@ -111,60 +111,82 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetLabels(int FotoID)
+        public IActionResult GetLabels(int photoID)
         {
-            List<Label> labelList = db.Label.Include(u=>u.Annotation).Where(u => u.PhotoID == FotoID).ToList();
-            List<LabelViewModel> lwm = new List<LabelViewModel>();
+            List<Label> labelList = db.Label.Where(u => u.photoID == photoID).ToList();
+            List<LabelViewModel> model = new List<LabelViewModel>();
             foreach (var item in labelList)
             {
-                var n = new LabelViewModel()
+                var m = new LabelViewModel();
+                m.annoID = item.annoID;
+                m.photoID = item.photoID;
+                m.projectID = item.projectID;
+                m.sizeFactor = item.sizeFactor;
+                m.shape = (int)item.shape;
+
+                foreach (var p in item.points)
                 {
-                    AnnotationID = item.AnnotationID,
-                    rectangle = new Rectangle() { beginX = item.beginX, beginY = item.beginY, endX = item.endX, endY = item.endY }
-                };
-                lwm.Add(n);
+                    m.points.Append(new Point() { X = p.X, Y = p.Y });
+                }
+                model.Add(m);
             }
-            return Json(lwm);
+            return Json(model);
         }
 
         [HttpPost]
-        public IActionResult SetLabels(List<LabelViewModel> labelViewModel)
+        public IActionResult SetLabels(List<LabelViewModel> modelList)
         {
+            
             try
             {
                 User currentUser = CurrentUser();
                 if (currentUser == null)
                     throw new Exception("Kullanıcı değilsiniz!");
 
-                int photoID = labelViewModel.FirstOrDefault().photoID;
+                // modelden GENEL bilgileri al
+                int projectID = modelList.FirstOrDefault().projectID;
+                int photoID = modelList.FirstOrDefault().photoID;
+                float sizeFactor = modelList.FirstOrDefault().sizeFactor;
 
-                if (db.Label.Any(u => u.PhotoID == photoID))
+                // Bu fotoğrafla ilgili tüm label bilgisini sil.
+                Photo photo = db.Photo.FirstOrDefault(u => u.ID == photoID);
+
+                var previousListToDelete = db.Label.Include(u=>u.Photo).Where(u => u.Photo == photo);
+                if (previousListToDelete.Any())
                 {
-                    var previousListToDelete = db.Label.Where(u => u.PhotoID == photoID);
                     db.RemoveRange(previousListToDelete);
                     db.SaveChanges();
                 }
 
-                Photo photo = db.Photo.FirstOrDefault(u => u.ID == photoID);
-                
+                // modelden gelen label bilgisini listele
                 List<Label> labelList = new List<Label>();
-                foreach (var item in labelViewModel)
+                foreach (var item in modelList)
                 {
-                    Annotation Annotation = db.Annotation.FirstOrDefault(u => u.ID == item.AnnotationID);
+                    Annotation Annotation = db.Annotation.FirstOrDefault(u => u.ID == item.annoID);
 
                     Label label = new Label();
                     label.Photo = photo;
-                    label.User = currentUser;
-                    label.Annotation = Annotation ;
-                    label.beginX = item.rectangle.beginX;
-                    label.beginY = item.rectangle.beginY;
-                    label.endX = item.rectangle.endX;
-                    label.endY = item.rectangle.endY;
+                    label.projectID = item.projectID;
+                    label.userID = currentUser.ID;
+                    label.annoID = item.annoID;
+                    label.sizeFactor = item.sizeFactor;
+                    label.shape = (SHAPE)item.shape;
+
+                    List<Coordinate> points = new List<Coordinate>();
+                    foreach (var p in item.points)
+                    {
+                        points.Add(new Coordinate() { X = p.X, Y = p.Y });
+                    }
+                    label.points = points;
+
                     labelList.Add(label);
                 }
+
+                // listelenen label bilgisini db'e kaydet.
                 db.AddRange(labelList);
                 db.SaveChanges();
 
+                // Fotoğrafın bilgisini güncelle.
                 photo.completed = true;
                 db.Update(photo);
                 db.SaveChanges();

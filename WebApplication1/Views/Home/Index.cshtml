@@ -9,6 +9,23 @@
         border-radius: 3px 4px;
     }
 
+    .naviScreen {
+        cursor: pointer;
+    }
+
+    .naviScreenContainer {
+        display: inline-block;
+        width: 80px;
+        text-align: center;
+    }
+
+    .naviInput {
+        position: absolute;
+        width: 80px;
+        border-radius: 5px;
+        z-index: 3;
+    }
+
     .spnShape {
         border: solid white 1px;
         padding: 5px;
@@ -24,7 +41,7 @@
     }
 
     .sizeBtn {
-        border:none;
+        border: none;
         padding-right: 8px;
         padding-left: 8px;
         cursor: pointer;
@@ -36,20 +53,23 @@
         margin-right: 10px;
     }
 
-    .mainDiv{
-        position:absolute;
-        top:84px;
-        background-color:yellow;
+    .mainDiv {
+        position: absolute;
+        top: 84px;
+        bottom: 0;
+        border-right: solid gray 1px;
+        background-color: yellow;
     }
+
     .annoListDiv {
         position: absolute;
         width: 120px;
+        top: 0;
+        
+        border-right: solid gray 1px;
         text-align: center;
     }
-    .canvasDiv {
-        position: absolute;
-        left: 120px;
-    }
+
     .annoBtn {
         width: 80%;
         border: solid 1px;
@@ -57,19 +77,38 @@
         margin-top: 0.4em;
         margin-bottom: 0.4em;
     }
+
+    .canvasDiv {
+        position: absolute;
+        top: 0px;
+        left: 120px;
+        min-height:200vh;
+    }
+    #canvas {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+    }
+    #manvas {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+    }
 </style>
 
 <input type="hidden" id="projectID" value="@ViewBag.projectID" />
 <div class="navigationPanel" id="navigationPanel">
-    <select id="project" onchange="ChangeProject()">
+    <select class="form-select-sm" id="project" onchange="ChangeProject()">
         <option style="color:gray; font-style:italic">Proje Seçiniz...</option>
     </select>
-    <span id="naviScreen">
-        0/0
+    <span class="naviScreenContainer" id="naviScreenContainer">
+        <span id="naviScreen" class="naviScreen" onclick="ShowNaviInput()">
+            0/0
+        </span>
     </span>
     <button class="btnNavi" onclick="ClickNavigate(false)">< önceki</button>
     <button class="btnNavi" onclick="ClickNavigate(true)">sonraki ></button>
-    <select id="seen" class="form-control-sm" onchange="ChangeSeen()" >
+    <select id="seen" class="form-control-sm" onchange="ChangeSeen()">
         <option value="1">İşlenmemişler</option>
         <option value="2">İşlenmişler</option>
         <option value="3">Tamamı</option>
@@ -77,7 +116,7 @@
     <button class="btn btn-sm btn-outline-danger" onclick="DeletePhoto()"> Resmi Sil </button>
     <button class="btn btn-outline-success" onclick="Completed()">Değişiklikleri Kaydet</button>
     &nbsp;&nbsp;&nbsp;&nbsp;
-    
+
     <span class="spnShape" onclick="ClickShape(this)" data-shape="0"><img src="~/sysimg/square.png" height="24" /></span>
     <span class="spnShape" onclick="ClickShape(this)" data-shape="1"><img src="~/sysimg/rect.png" height="24" /></span>
     <span class="spnShape" onclick="ClickShape(this)" data-shape="2"><img src="~/sysimg/circle.png" height="24" /></span>
@@ -85,11 +124,15 @@
     &nbsp;&nbsp;&nbsp;&nbsp;
     <span class="sizeBtnBorder">
         <button class="sizeBtn" onclick="ChangeCSize(false)">-</button>
-        <span  id="csize" style="background-color:rgb(220,220,220)"></span>
+        <span id="csize" style="background-color:rgb(220,220,220)"></span>
         <button class="sizeBtn" onclick="ChangeCSize(true)">+</button>
     </span>
-    <button onclick="OzDelCookie('preferences')">çerez sil</button>
+    <label>
+        CrossHair
+        <input type="checkbox" id="crossHair" onclick="ClickCrossHair()" />
+    </label>
 </div>
+
 <div class="mainDiv">
     <div class="annoListDiv">
         <u>Sınıflar</u>
@@ -98,20 +141,24 @@
     <div class="canvasDiv">
         <div id="error" class="text-bg-danger"></div>
         <canvas id="canvas"></canvas>
+        <canvas id="manvas"></canvas>
     </div>
 </div>
 
 
 
 <script>
+
     class Preferences {
+
         seen = 3;
         shape = 0;
         csize = 1000;
-        lastImageNo = 1;
+        crossHair = true;
         selectedAnno = -1;
     }
     var preferences = new Preferences();
+
     class NavigateViewModel {
         projectID;
         seen;
@@ -125,20 +172,37 @@
     }
     var navi = new NavigateViewModel();
 
+    class Label {
+        id;
+        projectID;
+        photoID;
+        annoID;
+        points;
+        shape;
+        sizeFactor;
+    }
+    var labelList = [];
+    var currentLabel = null;
+
+    class Point { X = 0; Y = 0; }
+    const mouse = new Point();
 
     var projectList = [];
     var annoList = [];
+    var colorList = [];
 
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
+    const manvas = document.getElementById("manvas");
+    const mtx = manvas.getContext("2d");
     var image = new Image();
-    
+
 
     $(document).ready(function () {
         InitPreferences();
         UpdatePreferences();
         InitNavigation();
-        StartAjaxChain();        
+        StartAjaxChain();
     });
     function StartAjaxChain() {
         GetProjectList(); // =>
@@ -160,6 +224,7 @@
         UpdateSeen();
         UpdateShape();
         UpdateCSize();
+        UpdateCrossHair();
     }
 
     function UpdateSeen() {
@@ -177,6 +242,11 @@
         let csize = preferences.csize;
         $("#csize").html(csize + "px");
     }
+    function UpdateCrossHair() {
+        let crossHair = preferences.crossHair;
+        $("#crossHair").prop("checked", crossHair);
+    }
+
     // #endregion
 
     // #region onClick & onChange
@@ -233,20 +303,46 @@
         }
         SavePreferences();
         UpdateCSize();
+        UpdateCanvas();
     }
 
+    function ClickCrossHair() {
+        preferences.crossHair = $("#crossHair").prop("checked");
+        SavePreferences();
+    }
 
     // #endregion
 
-    // #region Init Navigation
+    // #region Navigation
 
     function InitNavigation() {
         navi.projectID = Number($("#projectID").val());
         if (navi.projectID == 0) {
             $("#error").html("Bir proje seçiniz.");
         }
-        navi.imageNo = preferences.lastImageNo;
         navi.seen = preferences.seen;
+    }
+    function ShowNaviInput() {
+        if (navi.filesCount < 1)
+            return;
+        let p = $("#naviScreenContainer").position();
+        let input = $("<input>");
+        input.addClass("naviInput");
+        input.attr("id", "naviInput");
+        $("body").append(input);
+        input.css({ "position": "absolute", "top": p.top + "px", "left": p.left + "px" });
+        input.focus();
+        input.keyup(function (e) {
+            if (e.keyCode == 13) {
+                NaviGoTo(Number($(this).val()));
+            }
+        });
+    }
+    function NaviGoTo(value) {
+        navi.imageNo = value;
+        navi.imageNo = Number(navi.imageNo).clamp(1, navi.filesCount);
+        GetImage();
+        $("#naviInput").remove();
     }
 
     // #endregion
@@ -254,14 +350,14 @@
     // #region Ajax Chain
 
     function GetProjectList() {
-        new OzAjax("/Home/GetProjectList", GET, {projectID:navi.projectID}, ProjectListSuccess).Send();
+        new OzAjax("/Home/GetProjectList", GET, { projectID: navi.projectID }, ProjectListSuccess).Send();
         function ProjectListSuccess(data) {
             projectList = JSON.parse(data);
             UpdateProjects(); //=>
         }
     }
     function UpdateProjects() {
-        
+
         let project = $("#project");
         let firstChild = $("#project").children().first();
         project.html(firstChild);
@@ -291,11 +387,18 @@
             btn.data("annoid", i);
             btn.data("color", annoList[i].color);
             btn.data("textcolor", annoList[i].textColor);
+            colorList.push(annoList[i].color);
             btn.click(SelectAnno);
 
             annoListDiv.append(btn);
         }
         PaintAnnoBtns(); // =>
+    }
+
+    function SelectAnno() {
+        preferences.selectedAnno = Number($(this).data("annoid"));
+        SavePreferences();
+        PaintAnnoBtns();
     }
 
     function PaintAnnoBtns() {
@@ -319,7 +422,7 @@
     }
 
     function GetImage() {
-        new OzAjax("/Home/GetImage", POST, {navi:navi}, Success).Send();
+        new OzAjax("/Home/GetImage", POST, { navi: navi }, Success).Send();
         function Success(data) {
             navi = JSON.parse(data);
             if (navi.error != "") {
@@ -342,26 +445,191 @@
         image.src = navi.path;
         image.addEventListener("load", UpdateCanvas);
         image.addEventListener("error", HataVaaar);
-        function UpdateCanvas() {
-            if (image.width > 0) {
-                let oran = image.width / image.height;
-                canvas.width = preferences.csize;
-                canvas.height = canvas.width / oran;
-                ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.width, canvas.height);
-            }
-        }
-        function HataVaaar() {
+    }
+    function UpdateCanvas() {
+        if (image.width > 0) {
+            let oran = image.width / image.height;
             canvas.width = preferences.csize;
-            canvas.height = preferences.csize;
-            ctx.clearRect(0, 0, preferences.csize, preferences.csize);
+            canvas.height = canvas.width / oran;
+            ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.width, canvas.height);
+
+            manvas.width = canvas.width;
+            manvas.height = canvas.height;
         }
+    }
+    function HataVaaar() {
+        canvas.width = preferences.csize;
+        canvas.height = preferences.csize;
+        ctx.clearRect(0, 0, preferences.csize, preferences.csize);
     }
 
     // #endregion
 
-    function SelectAnno() {
+    // #region MANVAS
 
+    //// TRIGERS ////
+    var mouseEntered = false;
+    var drawing = false;
+    var currentColor = "#EEEEEE";
+
+    manvas.addEventListener("contextmenu", function (e) {
+        e.preventDefault();
+    });
+
+    manvas.addEventListener("mousedown", function (e) {
+
+        switch (e.button) {
+            case 0:
+                InitCurrentLabel();
+                break;
+            case 1:
+                break;
+            case 2:
+                break;
+        }
+
+        if (mouseButton == 0) {
+            
+            
+        }
+        
+    });
+    manvas.addEventListener("mouseup", function () {
+        switch (e.button) {
+            case 0:
+                break;
+            case 1:
+                break;
+            case 2:
+                break;
+        }
+        
+        
+
+
+    });
+    manvas.addEventListener("mouseenter", function (e) {
+        mouseEntered = true;
+    });
+    manvas.addEventListener("mouseleave", function (e) {
+        mouseEntered = false;
+        mouseButton = -1;
+        UpdateManvas();
+    });
+
+    manvas.addEventListener("mousemove", function (e) {
+        mouse.X = e.offsetX;
+        mouse.Y = e.offsetY;
+
+
+        UpdateManvas();
+    });
+
+
+    function UpdateManvas() {
+        ClearManvas();
+        CrossHair();
+        DrawLabels();
+        DrawCurrentLabel();
     }
+
+    function DrawLabels() {
+        
+    }
+
+    class Rectangle {
+        #width;
+        #height;
+        constructor(beginX, beginY, endX, endY) {
+            let ifX = beginX < endX;
+            let ifY = beginY < endY;
+            this.beginX = ifX ? beginX : endX;
+            this.endX = ifX ? endX : beginX;
+            this.beginY = ifY ? beginY : endY;
+            this.endY = ifY ? endY : beginY;
+            this.#width = this.endX - this.beginX;
+            this.#height = this.endY - this.beginY;
+
+            // this part makes sure it is a SQUARE
+            if (this.#width > this.#height) {
+                this.endX = beginX + this.#height;
+                this.#width = this.endX - this.beginX;
+            }
+            else {
+                this.endY = beginY + this.#width;
+                this.#height = this.endY - this.beginY;
+            }
+
+        }
+        getWidth = () => this.#width;
+        getHeight = () => this.#height;
+    }
+    var rect = new Rectangle();
+
+    function DrawCurrentLabel() {
+        if (!drawing)
+            return;
+        switch (preferences.shape) {
+            case 0: // SQUARE
+
+
+                mtx.rect(rect.beginX, rect.beginY, rect.getWidth(), rect.getHeight());
+
+                break;
+            case 1: // RECTANGLE
+                break;
+            case 2: // CIRCLE
+                break;
+            case 3: // POLYGON
+                break;
+        }
+        
+    }
+
+
+    function InitCurrentLabel() {
+        currentColor = colorList[preferences.selectedAnno];
+        currentLabel = new Label();
+        currentLabel.shape = preferences.shape;
+        currentLabel.annoID = preferences.selectedAnno;
+        currentLabel.sizeFactor = image.width / preferences.csize;
+        currentLabel.photoID = navi.imageID;
+        currentLabel.projectID = navi.projectID;
+        currentLabel.points.push(mouse);
+    }
+    function ClearCurrentLabel() {
+        currentColor = "#EEEEEE";
+        currentLabel = null;
+    }
+
+    function ClearManvas() {
+        mtx.beginPath();
+        mtx.clearRect(0, 0, manvas.width, manvas.height);
+    }
+    function CrossHair() {
+        if (!preferences.crossHair)
+            return;
+        if (mouseEntered == false)
+            return;
+        mtx.strokeStyle = "white";
+        mtx.lineWidth = 2;
+        mtx.globalAlpha = 0.4;
+
+        // vertical line
+        mtx.moveTo(mouse.X, 0);
+        mtx.lineTo(mouse.X, manvas.height);
+        mtx.stroke();
+        // horizontal line
+        mtx.moveTo(0, mouse.Y);
+        mtx.lineTo(manvas.width, mouse.Y);
+        mtx.stroke();
+        mtx.globalAlpha = 1.0;
+    }
+
+    // #endregion
+
+
+
 
 
     /*
@@ -388,7 +656,7 @@
         window.location = "/?projectID=" + pid;
     }
 
-    
+
     function PlaceAnnoList() {
 
         for (var i = 0; i < annoList.length; i++) {
@@ -424,9 +692,9 @@
             }
         });
     }
-    
 
-    
+
+
 
 
     function SelectAnno() {
@@ -473,6 +741,5 @@
 */
 
 
-
-
 </script>
+

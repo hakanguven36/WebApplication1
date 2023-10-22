@@ -11,21 +11,29 @@ namespace WebApplication1.Models
     {
         public int ID { get; set; }
 
-        public int beginX { get; set; }
-        public int beginY { get; set; }
-        public int endX { get; set; }
-        public int endY { get; set; }
-
-        [ForeignKey(nameof(Annotation))]
-        public int AnnotationID { get; set; }
-        public Annotation Annotation { get; set; }
-
         [ForeignKey(nameof(Photo))]
-        public int PhotoID { get; set; }
+        public int photoID { get; set; }
         public Photo Photo { get; set; }
 
-        [ForeignKey(nameof(User))]
-        public int UserID { get; set; }
-        public User User { get; set; }
+        public List<Coordinate> points { get; set; }
+        public float sizeFactor { get; set; }
+        public SHAPE shape { get; set; }
+
+        public int annoID { get; set; }
+        public int userID { get; set; }
+        public int projectID { get; set; }
+    }
+
+    public class Coordinate
+    {
+        public int ID { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+    }
+
+    public enum SHAPE{
+        rectangle,
+        circle,
+        poligon
     }
 }

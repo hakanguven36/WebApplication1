@@ -9,18 +9,18 @@ namespace WebApplication1.ViewModels
     public class LabelViewModel
     {
         public int id { get; set; }
+        public int projectID { get; set; }
         public int photoID { get; set; }
-        public int AnnotationID { get; set; }
-        public Rectangle rectangle { get; set; }
-        public int sizeFactor { get; set; }
+        public int annoID { get; set; }
+
+        public List<Point> points{ get; set; }
+        public float sizeFactor { get; set; }
+        public int shape { get; set; }
     }
 
-    public class Rectangle
+    public class Point
     {
-        public int beginX { get; set; }
-        public int endX { get; set; }
-        public int beginY { get; set; }
-        public int endY { get; set; }
-
+        public int X { get; set; }
+        public int Y { get; set; }
     }
 }
