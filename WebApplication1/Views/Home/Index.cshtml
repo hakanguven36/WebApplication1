@@ -131,6 +131,7 @@
         CrossHair
         <input type="checkbox" id="crossHair" onclick="ClickCrossHair()" />
     </label>
+    <button onclick="WriteListToConsole()">Listeyi Göster</button>
 </div>
 
 <div class="mainDiv">
@@ -149,16 +150,14 @@
 
 <script>
 
+    // #region Classes
     class Preferences {
-
         seen = 3;
         shape = 0;
         csize = 1000;
         crossHair = true;
         selectedAnno = -1;
     }
-    var preferences = new Preferences();
-
     class NavigateViewModel {
         projectID;
         seen;
@@ -170,22 +169,67 @@
         //-------
         imageID;
     }
-    var navi = new NavigateViewModel();
-
     class Label {
         id;
         projectID;
         photoID;
         annoID;
-        points;
+        points = [];
         shape;
         sizeFactor;
     }
+    class Point {
+        constructor(x, y) {
+            this.X = x;
+            this.Y = y;
+        }
+    }
+    class Rectangle {
+        #width;
+        #height;
+        constructor(beginX, beginY, endX, endY, isSquare) {
+            let ifX = beginX < endX;
+            let ifY = beginY < endY;
+            this.beginX = ifX ? beginX : endX;
+            this.endX = ifX ? endX : beginX;
+            this.beginY = ifY ? beginY : endY;
+            this.endY = ifY ? endY : beginY;
+            this.#width = this.endX - this.beginX;
+            this.#height = this.endY - this.beginY;
+            this.isSquare = isSquare;
+
+            if (isSquare) {
+                if (this.#width > this.#height) {
+                    this.endX = beginX + this.#height;
+                    this.#width = this.endX - this.beginX;
+                }
+                else {
+                    this.endY = beginY + this.#width;
+                    this.#height = this.endY - this.beginY;
+                }
+            }
+        }
+        getWidth = () => this.#width;
+        getHeight = () => this.#height;
+
+    }
+    Rectangle.prototype.GetPoints = function () {
+        let pointsOfRect = [];
+        pointsOfRect.push(new Point(this.beginX, this.beginY));
+        pointsOfRect.push(new Point(this.endX, this.beginY));
+        pointsOfRect.push(new Point(this.endX, this.endY));
+        pointsOfRect.push(new Point(this.beginX, this.endY));
+        return pointsOfRect;
+    }
+
+    var preferences = new Preferences();
+    var navi = new NavigateViewModel();
     var labelList = [];
     var currentLabel = null;
-
-    class Point { X = 0; Y = 0; }
     const mouse = new Point();
+    var rect = new Rectangle();
+
+    // #endregion
 
     var projectList = [];
     var annoList = [];
@@ -304,6 +348,8 @@
         SavePreferences();
         UpdateCSize();
         UpdateCanvas();
+        ResizeLabelList()
+        UpdateManvas();
     }
 
     function ClickCrossHair() {
@@ -467,64 +513,91 @@
 
     // #region MANVAS
 
-    //// TRIGERS ////
     var mouseEntered = false;
     var drawing = false;
-    var currentColor = "#EEEEEE";
+    
+    //// TRIGERS ////
 
     manvas.addEventListener("contextmenu", function (e) {
         e.preventDefault();
     });
 
-    manvas.addEventListener("mousedown", function (e) {
-
-        switch (e.button) {
-            case 0:
-                InitCurrentLabel();
-                break;
-            case 1:
-                break;
-            case 2:
-                break;
-        }
-
-        if (mouseButton == 0) {
-            
-            
-        }
-        
-    });
-    manvas.addEventListener("mouseup", function () {
-        switch (e.button) {
-            case 0:
-                break;
-            case 1:
-                break;
-            case 2:
-                break;
-        }
-        
-        
-
-
-    });
     manvas.addEventListener("mouseenter", function (e) {
         mouseEntered = true;
     });
+
     manvas.addEventListener("mouseleave", function (e) {
         mouseEntered = false;
         mouseButton = -1;
-        UpdateManvas();
+        UpdateManvas(); // crossHair'ı kaldırsın.
+    });
+
+    manvas.addEventListener("mousedown", function (e) {
+        switch (e.button) {
+            case 0:
+                if (preferences.selectedAnno == -1) {
+                    alert("Sınıf seçiniz!");
+                    return;
+                }
+                InitCurrentLabel();
+                drawing = true;
+                break;
+            case 1:
+                break;
+            case 2:
+                break;
+        }
+    });
+
+    manvas.addEventListener("mouseup", function (e) {
+        switch (e.button) {
+            case 0:                
+                // currentLabel'ı listeye aktar ve boşalt
+                // TODO: belirli alanın üzerindeyse push yapılacak!
+                drawing = false;
+                labelList.push(currentLabel);
+                ClearCurrentLabel();
+                break;
+            case 1:
+                break;
+            case 2:
+                break;
+        }
     });
 
     manvas.addEventListener("mousemove", function (e) {
         mouse.X = e.offsetX;
         mouse.Y = e.offsetY;
+        
+        if (drawing) {
 
+            let firstPoint = currentLabel.points[0];
+            switch (e.button) {
+                case 0:
+                    switch (preferences.shape) {
+                        case 0:
+                            rect = new Rectangle(firstPoint.X, firstPoint.Y, mouse.X, mouse.Y, true);
+                            currentLabel.points = rect.GetPoints();
+                            break;
+                        case 1:
+                            rect = new Rectangle(firstPoint.X, firstPoint.Y, mouse.X, mouse.Y, false);
+                            currentLabel.points = rect.GetPoints();
+                            break;
+                        case 2:
+                            break;
+                        case 3:
+                            break;
+                    }
+                    break;
+                case 1:
+                    break;
+                case 2:
+                    break;
+            }
+        }
 
         UpdateManvas();
     });
-
 
     function UpdateManvas() {
         ClearManvas();
@@ -533,75 +606,80 @@
         DrawCurrentLabel();
     }
 
-    function DrawLabels() {
-        
-    }
-
-    class Rectangle {
-        #width;
-        #height;
-        constructor(beginX, beginY, endX, endY) {
-            let ifX = beginX < endX;
-            let ifY = beginY < endY;
-            this.beginX = ifX ? beginX : endX;
-            this.endX = ifX ? endX : beginX;
-            this.beginY = ifY ? beginY : endY;
-            this.endY = ifY ? endY : beginY;
-            this.#width = this.endX - this.beginX;
-            this.#height = this.endY - this.beginY;
-
-            // this part makes sure it is a SQUARE
-            if (this.#width > this.#height) {
-                this.endX = beginX + this.#height;
-                this.#width = this.endX - this.beginX;
-            }
-            else {
-                this.endY = beginY + this.#width;
-                this.#height = this.endY - this.beginY;
-            }
-
-        }
-        getWidth = () => this.#width;
-        getHeight = () => this.#height;
-    }
-    var rect = new Rectangle();
-
     function DrawCurrentLabel() {
         if (!drawing)
             return;
-        switch (preferences.shape) {
-            case 0: // SQUARE
-
-
-                mtx.rect(rect.beginX, rect.beginY, rect.getWidth(), rect.getHeight());
-
-                break;
-            case 1: // RECTANGLE
-                break;
-            case 2: // CIRCLE
-                break;
-            case 3: // POLYGON
-                break;
-        }
         
+        mtx.beginPath();
+
+        let firstPoint = currentLabel.points[0];
+        mtx.moveTo(firstPoint.X, firstPoint.Y);
+
+        for (var i = 1; i < currentLabel.points.length; i++) {
+            let p = currentLabel.points[i];
+            mtx.lineTo(p.X, p.Y);
+        }
+        mtx.closePath();
+
+        mtx.globalAlpha = 0.1;
+        mtx.fillStyle = colorList[preferences.selectedAnno];
+        mtx.fill();
+        mtx.globalAlpha = 1.0;
+        mtx.strokeStyle = colorList[preferences.selectedAnno];
+        mtx.lineWidth = 5;
+        mtx.stroke();
     }
+    function DrawLabels() {
+        if (labelList.length < 1)
+            return;
 
+        for (var j = 0; j < labelList.length; j++) {
 
+            let label = labelList[j];
+            
+            mtx.beginPath();
+            let firstPoint = label.points[0];
+            mtx.moveTo(firstPoint.X, firstPoint.Y);
+            for (var i = 1; i < label.points.length; i++) {
+                let p = label.points[i];
+                mtx.lineTo(p.X, p.Y);
+            }
+            mtx.closePath();
+            mtx.globalAlpha = 0.2;
+            mtx.fillStyle = colorList[label.annoID];
+            mtx.fill();
+            mtx.globalAlpha = 1.0;
+            mtx.strokeStyle = colorList[label.annoID];
+            mtx.lineWidth = 2;
+            mtx.stroke();
+        }
+    }
     function InitCurrentLabel() {
-        currentColor = colorList[preferences.selectedAnno];
         currentLabel = new Label();
         currentLabel.shape = preferences.shape;
         currentLabel.annoID = preferences.selectedAnno;
         currentLabel.sizeFactor = image.width / preferences.csize;
         currentLabel.photoID = navi.imageID;
         currentLabel.projectID = navi.projectID;
-        currentLabel.points.push(mouse);
+        switch (preferences.shape) {
+            case 0:
+                rect = new Rectangle(mouse.X, mouse.Y, mouse.X + 1, mouse.Y + 1, true);
+                currentLabel.points.push(rect.GetPoints());
+                break;
+            case 1:
+                rect = new Rectangle(mouse.X, mouse.Y, mouse.X + 1, mouse.Y + 1, false);
+                currentLabel.points.push(rect.GetPoints());
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            default:
+        }
     }
     function ClearCurrentLabel() {
-        currentColor = "#EEEEEE";
         currentLabel = null;
     }
-
     function ClearManvas() {
         mtx.beginPath();
         mtx.clearRect(0, 0, manvas.width, manvas.height);
@@ -626,8 +704,33 @@
         mtx.globalAlpha = 1.0;
     }
 
+    function WriteListToConsole() {
+        console.log("LABELLIST=> ", JSON.stringify(labelList));
+    }
+
+    function ResizeLabelList() {
+        for (var j = 0; j < labelList.length; j++) {
+            let label = labelList[j];
+            let label_sizeFactor = label.sizeFactor;
+            let current_sizeFactor = image.width / preferences.csize;
+            let alpha = label_sizeFactor / current_sizeFactor;
+            for (var i = 0; i < label.points.length; i++) {
+                labelList[j].points[i].X = Math.floor(label.points[i].X * alpha);
+                labelList[j].points[i].Y = Math.floor(label.points[i].Y * alpha);
+            }
+            labelList[j].sizeFactor = current_sizeFactor;
+        }
+    }
+
     // #endregion
 
+
+    /*
+     * 
+     * labelList içine kaydederken sizeFactor ile çarpip fotoğraf orjinaline göre kaydetmek gerekli.
+     * ve bu değer sabit kalacak. (ResizeLabelList fonksiyonu zoom in zoom out yapınca kayıyor..)
+     * Gösterirken de sizeFactor'e bölerek göstermek gerekli.
+     */
 
 
 
