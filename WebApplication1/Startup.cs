@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebApplication1.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace WebApplication1
 {
@@ -30,8 +31,8 @@ namespace WebApplication1
             services.AddDbContext<MyContext>();
             services.AddMvc(option => option.EnableEndpointRouting = false)
                 .AddRazorRuntimeCompilation()
-                .AddJsonOptions(opt => opt.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping)
-                .AddJsonOptions(opt => opt.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve)
+                //.AddJsonOptions(opt => opt.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping)
+                //.AddJsonOptions(opt => opt.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve)
                 .AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
             
             services.AddSession(configure => new SessionOptions()
@@ -44,6 +45,8 @@ namespace WebApplication1
             services.Configure<GenelAyarlar>(Configuration.GetSection("GenelAyarlar"));
             services.AddControllersWithViews();
                 
+                
+
 
         }
 

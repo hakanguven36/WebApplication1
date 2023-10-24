@@ -14,13 +14,13 @@ namespace WebApplication1.ViewModels
         public int annoID { get; set; }
 
         public List<Point> points{ get; set; }
-        public float sizeFactor { get; set; }
+        public double sizeFactor { get; set; }
         public int shape { get; set; }
     }
 
     public class Point
     {
-        public int X { get; set; }
-        public int Y { get; set; }
+        public int x { get; set; }
+        public int y { get; set; }
     }
 }

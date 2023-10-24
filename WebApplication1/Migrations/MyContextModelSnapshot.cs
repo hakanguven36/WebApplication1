@@ -47,7 +47,7 @@ namespace WebApplication1.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("LabelID")
+                    b.Property<int>("LabelID")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("X")
@@ -187,9 +187,13 @@ namespace WebApplication1.Migrations
 
             modelBuilder.Entity("WebApplication1.Models.Coordinate", b =>
                 {
-                    b.HasOne("WebApplication1.Models.Label", null)
+                    b.HasOne("WebApplication1.Models.Label", "Label")
                         .WithMany("points")
-                        .HasForeignKey("LabelID");
+                        .HasForeignKey("LabelID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Label");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Label", b =>

@@ -113,30 +113,33 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public IActionResult GetLabels(int photoID)
         {
-            List<Label> labelList = db.Label.Where(u => u.photoID == photoID).ToList();
+            List<Label> labelList = db.Label.Include(u=>u.points).Where(u => u.photoID == photoID).ToList();
             List<LabelViewModel> model = new List<LabelViewModel>();
             foreach (var item in labelList)
             {
                 var m = new LabelViewModel();
+                m.id = item.ID;
                 m.annoID = item.annoID;
                 m.photoID = item.photoID;
                 m.projectID = item.projectID;
                 m.sizeFactor = item.sizeFactor;
                 m.shape = (int)item.shape;
 
-                foreach (var p in item.points)
-                {
-                    m.points.Append(new Point() { X = p.X, Y = p.Y });
-                }
+                m.points = new List<Point>();
+                if(item.points != null)
+                    foreach (var p in item.points)
+                    {
+                        m.points.Add(new Point() { x = p.X, y = p.Y });
+                    }
                 model.Add(m);
             }
             return Json(model);
         }
 
         [HttpPost]
-        public IActionResult SetLabels(List<LabelViewModel> modelList)
+        public IActionResult SetLabels(string labelListJson)
         {
-            
+            List<LabelViewModel> modelList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LabelViewModel>>(labelListJson);
             try
             {
                 User currentUser = CurrentUser();
@@ -146,12 +149,9 @@ namespace WebApplication1.Controllers
                 // modelden GENEL bilgileri al
                 int projectID = modelList.FirstOrDefault().projectID;
                 int photoID = modelList.FirstOrDefault().photoID;
-                float sizeFactor = modelList.FirstOrDefault().sizeFactor;
 
                 // Bu fotoğrafla ilgili tüm label bilgisini sil.
-                Photo photo = db.Photo.FirstOrDefault(u => u.ID == photoID);
-
-                var previousListToDelete = db.Label.Include(u=>u.Photo).Where(u => u.Photo == photo);
+                var previousListToDelete = db.Label.Where(u => u.photoID == photoID).ToList();
                 if (previousListToDelete.Any())
                 {
                     db.RemoveRange(previousListToDelete);
@@ -165,7 +165,7 @@ namespace WebApplication1.Controllers
                     Annotation Annotation = db.Annotation.FirstOrDefault(u => u.ID == item.annoID);
 
                     Label label = new Label();
-                    label.Photo = photo;
+                    label.photoID = photoID;
                     label.projectID = item.projectID;
                     label.userID = currentUser.ID;
                     label.annoID = item.annoID;
@@ -175,7 +175,7 @@ namespace WebApplication1.Controllers
                     List<Coordinate> points = new List<Coordinate>();
                     foreach (var p in item.points)
                     {
-                        points.Add(new Coordinate() { X = p.X, Y = p.Y });
+                        points.Add(new Coordinate() { X = p.x, Y = p.y });
                     }
                     label.points = points;
 
@@ -187,6 +187,7 @@ namespace WebApplication1.Controllers
                 db.SaveChanges();
 
                 // Fotoğrafın bilgisini güncelle.
+                Photo photo = db.Photo.FirstOrDefault(u => u.ID == photoID);
                 photo.completed = true;
                 db.Update(photo);
                 db.SaveChanges();

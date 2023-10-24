@@ -114,7 +114,7 @@
         <option value="3">Tamamı</option>
     </select>
     <button class="btn btn-sm btn-outline-danger" onclick="DeletePhoto()"> Resmi Sil </button>
-    <button class="btn btn-outline-success" onclick="Completed()">Değişiklikleri Kaydet</button>
+    <button class="btn btn-outline-success" id="completedBtn" onclick="Completed()">Değişiklikleri Kaydet</button>
     &nbsp;&nbsp;&nbsp;&nbsp;
 
     <span class="spnShape" onclick="ClickShape(this)" data-shape="0"><img src="~/sysimg/square.png" height="24" /></span>
@@ -180,8 +180,8 @@
     }
     class Point {
         constructor(x, y) {
-            this.X = x;
-            this.Y = y;
+            this.x = x;
+            this.y = y;
         }
     }
     class Rectangle {
@@ -240,7 +240,7 @@
     const manvas = document.getElementById("manvas");
     const mtx = manvas.getContext("2d");
     var image = new Image();
-
+    var selectedLabel = -1;
 
     $(document).ready(function () {
         InitPreferences();
@@ -326,9 +326,24 @@
         navi.imageNo = 1;
         GetImage();
     }
+    
 
-    function SaveLabels() {
-        /* ... */
+    function Completed() {
+
+        MakeLabelListValuesInteger();
+
+        new OzAjax("/Home/SetLabels", POST, { labelListJson: JSON.stringify(labelList) }, CompletedSuccess).Send();
+        function CompletedSuccess(data) {
+            data = JSON.parse(data);
+            if (data == "ok") {
+                let oldHtml = $("#completedBtn").html();
+                $("#completedBtn").html("Kaydedildi.")
+                setTimeout(function () { $("#completedBtn").html(oldHtml) }, 1000);
+            }
+            else {
+                HataYaz(data);
+            }
+        }
     }
 
     function ClickShape(dom) {
@@ -355,6 +370,16 @@
     function ClickCrossHair() {
         preferences.crossHair = $("#crossHair").prop("checked");
         SavePreferences();
+    }
+
+    function MakeLabelListValuesInteger() {
+        for (var j = 0; j < labelList.length; j++) {
+            for (var i = 0; i < labelList[j].points.length; i++) {
+                labelList[j].points[i].x = Math.floor(labelList[j].points[i].x);
+                labelList[j].points[i].y = Math.floor(labelList[j].points[i].y);
+            }
+            //labelList[j].sizeFactor = Math.floor(labelList[j].sizeFactor)
+        }
     }
 
     // #endregion
@@ -472,13 +497,16 @@
         function Success(data) {
             navi = JSON.parse(data);
             if (navi.error != "") {
-                $("#error").html(navi.error);
+                HataYaz(navi.error);
             }
             else {
                 $("#error").html("");
             }
             UpdateNaviScreen();
             DrawCanvas();
+            selectedLabel = -1;
+            ClearCurrentLabel();
+            FillLabelList();
         }
     }
 
@@ -490,7 +518,7 @@
     function DrawCanvas() {
         image.src = navi.path;
         image.addEventListener("load", UpdateCanvas);
-        image.addEventListener("error", HataVaaar);
+        image.addEventListener("error", HataYaz);
     }
     function UpdateCanvas() {
         if (image.width > 0) {
@@ -503,10 +531,21 @@
             manvas.height = canvas.height;
         }
     }
-    function HataVaaar() {
+
+    function FillLabelList() {
+        labelList = [];
+        new OzAjax("/Home/GetLabels", GET, { photoID: navi.imageID }, GetLabelsSuccess).Send();
+        function GetLabelsSuccess(data) {
+            labelList = JSON.parse(data);
+            UpdateManvas();
+        }
+    }
+
+    function HataYaz(hata) {
         canvas.width = preferences.csize;
         canvas.height = preferences.csize;
         ctx.clearRect(0, 0, preferences.csize, preferences.csize);
+        $("#error").html(hata ?? "Bir hata oluştu!");
     }
 
     // #endregion
@@ -515,6 +554,7 @@
 
     var mouseEntered = false;
     var drawing = false;
+    var pulling = false;
     
     //// TRIGERS ////
 
@@ -545,6 +585,10 @@
             case 1:
                 break;
             case 2:
+                SelectLabel();
+                UpdateManvas();                
+                if (selectedLabel != -1)
+                    pulling = true;
                 break;
         }
     });
@@ -561,40 +605,34 @@
             case 1:
                 break;
             case 2:
+                pulling = false;
                 break;
         }
     });
 
     manvas.addEventListener("mousemove", function (e) {
-        mouse.X = e.offsetX;
-        mouse.Y = e.offsetY;
-        
-        if (drawing) {
+        mouse.x = e.offsetX;
+        mouse.y = e.offsetY;
 
+        if (drawing) {
             let firstPoint = currentLabel.points[0];
-            switch (e.button) {
+            switch (preferences.shape) {
                 case 0:
-                    switch (preferences.shape) {
-                        case 0:
-                            rect = new Rectangle(firstPoint.X, firstPoint.Y, mouse.X, mouse.Y, true);
-                            currentLabel.points = rect.GetPoints();
-                            break;
-                        case 1:
-                            rect = new Rectangle(firstPoint.X, firstPoint.Y, mouse.X, mouse.Y, false);
-                            currentLabel.points = rect.GetPoints();
-                            break;
-                        case 2:
-                            break;
-                        case 3:
-                            break;
-                    }
+                    rect = new Rectangle(firstPoint.x, firstPoint.y, mouse.x, mouse.y, true);
+                    currentLabel.points = rect.GetPoints();
                     break;
                 case 1:
+                    rect = new Rectangle(firstPoint.x, firstPoint.y, mouse.x, mouse.y, false);
+                    currentLabel.points = rect.GetPoints();
                     break;
                 case 2:
                     break;
+                case 3:
+                    break;
             }
         }
+        else if (pulling)
+            MoveLabel(e.movementX, e.movementY);
 
         UpdateManvas();
     });
@@ -613,11 +651,11 @@
         mtx.beginPath();
 
         let firstPoint = currentLabel.points[0];
-        mtx.moveTo(firstPoint.X, firstPoint.Y);
+        mtx.moveTo(firstPoint.x, firstPoint.y);
 
         for (var i = 1; i < currentLabel.points.length; i++) {
             let p = currentLabel.points[i];
-            mtx.lineTo(p.X, p.Y);
+            mtx.lineTo(p.x, p.y);
         }
         mtx.closePath();
 
@@ -639,18 +677,24 @@
             
             mtx.beginPath();
             let firstPoint = label.points[0];
-            mtx.moveTo(firstPoint.X, firstPoint.Y);
+            mtx.moveTo(firstPoint.x, firstPoint.y);
             for (var i = 1; i < label.points.length; i++) {
                 let p = label.points[i];
-                mtx.lineTo(p.X, p.Y);
+                mtx.lineTo(p.x, p.y);
             }
             mtx.closePath();
             mtx.globalAlpha = 0.2;
+            if (selectedLabel == j) {
+                mtx.globalAlpha = 0.1;
+            }
             mtx.fillStyle = colorList[label.annoID];
             mtx.fill();
             mtx.globalAlpha = 1.0;
             mtx.strokeStyle = colorList[label.annoID];
             mtx.lineWidth = 2;
+            if (selectedLabel == j) {                
+                mtx.lineWidth = 5;
+            }
             mtx.stroke();
         }
     }
@@ -663,11 +707,11 @@
         currentLabel.projectID = navi.projectID;
         switch (preferences.shape) {
             case 0:
-                rect = new Rectangle(mouse.X, mouse.Y, mouse.X + 1, mouse.Y + 1, true);
+                rect = new Rectangle(mouse.x, mouse.y, mouse.x + 1, mouse.y + 1, true);
                 currentLabel.points.push(rect.GetPoints());
                 break;
             case 1:
-                rect = new Rectangle(mouse.X, mouse.Y, mouse.X + 1, mouse.Y + 1, false);
+                rect = new Rectangle(mouse.x, mouse.y, mouse.x + 1, mouse.y + 1, false);
                 currentLabel.points.push(rect.GetPoints());
                 break;
             case 2:
@@ -694,20 +738,18 @@
         mtx.globalAlpha = 0.4;
 
         // vertical line
-        mtx.moveTo(mouse.X, 0);
-        mtx.lineTo(mouse.X, manvas.height);
+        mtx.moveTo(mouse.x, 0);
+        mtx.lineTo(mouse.x, manvas.height);
         mtx.stroke();
         // horizontal line
-        mtx.moveTo(0, mouse.Y);
-        mtx.lineTo(manvas.width, mouse.Y);
+        mtx.moveTo(0, mouse.y);
+        mtx.lineTo(manvas.width, mouse.y);
         mtx.stroke();
         mtx.globalAlpha = 1.0;
     }
-
     function WriteListToConsole() {
         console.log("LABELLIST=> ", JSON.stringify(labelList));
     }
-
     function ResizeLabelList() {
         for (var j = 0; j < labelList.length; j++) {
             let label = labelList[j];
@@ -715,21 +757,71 @@
             let current_sizeFactor = image.width / preferences.csize;
             let alpha = label_sizeFactor / current_sizeFactor;
             for (var i = 0; i < label.points.length; i++) {
-                labelList[j].points[i].X = Math.floor(label.points[i].X * alpha);
-                labelList[j].points[i].Y = Math.floor(label.points[i].Y * alpha);
+                labelList[j].points[i].x = label.points[i].x * alpha;
+                labelList[j].points[i].y = label.points[i].y * alpha;
             }
             labelList[j].sizeFactor = current_sizeFactor;
         }
     }
 
+    function SelectLabel() {
+        mouse.x;
+        mouse.y;
+        selectedLabel = -1;
+        for (var j = 0; j < labelList.length; j++) {
+            let label = labelList[j];
+            if (Collision(label.points, mouse.x, mouse.y))
+                selectedLabel = j;
+        }
+    }
+
+    function MoveLabel(movementX, movementY) {
+        for (var i = 0; i < labelList[selectedLabel].points.length; i++) {
+            labelList[selectedLabel].points[i].x += movementX;
+            labelList[selectedLabel].points[i].y += movementY;
+        }
+    }
+
+
+    // Bu fonksiyon ç/alıntı. https://www.jeffreythompson.org/collision-detection/poly-point.php
+    function Collision(vertices, px, py) {
+        var collision = false;
+
+        // go through each of the vertices, plus
+        // the next vertex in the list
+        var next = 0;
+        for (var current = 0; current < vertices.length; current++) {
+
+            // get next vertex in list
+            // if we've hit the end, wrap around to 0
+            next = current + 1;
+            if (next == vertices.length) next = 0;
+
+            // get the PVectors at our current position
+            // this makes our if statement a little cleaner
+            var vc = vertices[current];    // c for "current"
+            var vn = vertices[next];       // n for "next"
+
+            // compare position, flip 'collision' variable
+            // back and forth
+            if (((vc.y >= py && vn.y < py) || (vc.y < py && vn.y >= py)) &&
+                (px < (vn.x - vc.x) * (py - vc.y) / (vn.y - vc.y) + vc.x)) {
+                collision = !collision;
+            }
+        }
+        return collision;
+    }
+
+
     // #endregion
 
 
     /*
-     * 
-     * labelList içine kaydederken sizeFactor ile çarpip fotoğraf orjinaline göre kaydetmek gerekli.
-     * ve bu değer sabit kalacak. (ResizeLabelList fonksiyonu zoom in zoom out yapınca kayıyor..)
-     * Gösterirken de sizeFactor'e bölerek göstermek gerekli.
+     zoom in zoom out yapınca kayıyor..
+     serverSide içinde orjinal fotoğraf değerlerine çevirerek kaydedelim.
+     getLabelList ile serverdan çekince preferences.sizeFactor'e bölerek çizdirelim.
+
+     AYRICA TÜM JSON ALIŞVERİŞİNİ string İLE YAPALIM ve NEWTONSOFT KULLANALIM...
      */
 
 

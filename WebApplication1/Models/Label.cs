@@ -16,7 +16,7 @@ namespace WebApplication1.Models
         public Photo Photo { get; set; }
 
         public List<Coordinate> points { get; set; }
-        public float sizeFactor { get; set; }
+        public double sizeFactor { get; set; }
         public SHAPE shape { get; set; }
 
         public int annoID { get; set; }
@@ -24,11 +24,17 @@ namespace WebApplication1.Models
         public int projectID { get; set; }
     }
 
+    [Table("Coordinate")]
     public class Coordinate
     {
         public int ID { get; set; }
+
         public int X { get; set; }
         public int Y { get; set; }
+
+        [ForeignKey(nameof(Label))]
+        public int LabelID { get; set; }
+        public Label Label { get; set; }
     }
 
     public enum SHAPE{

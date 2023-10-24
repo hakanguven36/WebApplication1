@@ -10,8 +10,9 @@ namespace WebApplication1.Models
 
 		public DbSet<User> User { get; set; }
         public DbSet<Project> Project { get; set; }
+		public DbSet<Annotation> Annotation { get; set; }
 		public DbSet<Photo> Photo { get; set; }
 		public DbSet<Label> Label { get; set; }
-		public DbSet<Annotation> Annotation { get; set; }
+		public DbSet<Coordinate> Coordinates { get; set; }
 	}
 }
