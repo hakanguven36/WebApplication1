@@ -26,6 +26,8 @@ namespace WebApplication1.Models
 
         public bool completed { get; set; }
 
+        public string labels { get; set; }
+
         [ForeignKey(nameof(Project))]
         public int ProjectID { get; set; }
         public Project Project { get; set; }

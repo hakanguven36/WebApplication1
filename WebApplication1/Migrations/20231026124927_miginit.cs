@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace WebApplication1.Migrations
 {
-    public partial class migBir : Migration
+    public partial class miginit : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -72,6 +72,7 @@ namespace WebApplication1.Migrations
                     sizeMB = table.Column<double>(type: "REAL", nullable: false),
                     imageFormat = table.Column<string>(type: "TEXT", nullable: true),
                     completed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    labels = table.Column<string>(type: "TEXT", nullable: true),
                     ProjectID = table.Column<int>(type: "INTEGER", nullable: false),
                     date = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
@@ -86,65 +87,10 @@ namespace WebApplication1.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "Label",
-                columns: table => new
-                {
-                    ID = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    photoID = table.Column<int>(type: "INTEGER", nullable: false),
-                    sizeFactor = table.Column<float>(type: "REAL", nullable: false),
-                    shape = table.Column<int>(type: "INTEGER", nullable: false),
-                    annoID = table.Column<int>(type: "INTEGER", nullable: false),
-                    userID = table.Column<int>(type: "INTEGER", nullable: false),
-                    projectID = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Label", x => x.ID);
-                    table.ForeignKey(
-                        name: "FK_Label_Photo_photoID",
-                        column: x => x.photoID,
-                        principalTable: "Photo",
-                        principalColumn: "ID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Coordinate",
-                columns: table => new
-                {
-                    ID = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    X = table.Column<int>(type: "INTEGER", nullable: false),
-                    Y = table.Column<int>(type: "INTEGER", nullable: false),
-                    LabelID = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Coordinate", x => x.ID);
-                    table.ForeignKey(
-                        name: "FK_Coordinate_Label_LabelID",
-                        column: x => x.LabelID,
-                        principalTable: "Label",
-                        principalColumn: "ID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_Annotation_ProjectID",
                 table: "Annotation",
                 column: "ProjectID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Coordinate_LabelID",
-                table: "Coordinate",
-                column: "LabelID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Label_photoID",
-                table: "Label",
-                column: "photoID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Photo_ProjectID",
@@ -158,16 +104,10 @@ namespace WebApplication1.Migrations
                 name: "Annotation");
 
             migrationBuilder.DropTable(
-                name: "Coordinate");
+                name: "Photo");
 
             migrationBuilder.DropTable(
                 name: "User");
-
-            migrationBuilder.DropTable(
-                name: "Label");
-
-            migrationBuilder.DropTable(
-                name: "Photo");
 
             migrationBuilder.DropTable(
                 name: "Project");

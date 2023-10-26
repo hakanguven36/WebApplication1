@@ -40,18 +40,21 @@ namespace WebApplication1.Controllers
             return Json(db.Project.Include(u => u.annoList).ToList());
         }
 
-        public IActionResult GetImage(NavigateViewModel navi)
+        public IActionResult GetImage(string _navi)
         {
+            NavigateViewModel navi = Newtonsoft.Json.JsonConvert.DeserializeObject<NavigateViewModel>(_navi);
             navi.error = "";
+            navi.path = "";
+            navi.labels = "[]";
+            navi.filesCount = 0;
+            navi.photoID = 0;
+            
             int projectID = navi.projectID;
             if(projectID == 0)
             {
                 navi.error = "Proje ID boş olamaz!";
-                navi.path = "";
-                navi.filesCount = 0;
-                navi.imageID = 0;
-                navi.imageNo = 0;
-                return Json(navi);
+                navi.photoNo = 0;
+                return JSON(navi);
             }
 
             switch (navi.seen)
@@ -68,126 +71,60 @@ namespace WebApplication1.Controllers
             }
 
             if (navi.filesCount == 0)
-            {
-                navi.error = "Bu bağlamda resim bulunmamaktadır!";
-                navi.path = "";
-                navi.filesCount = 0;
-                navi.imageID = 0;
-                navi.imageNo = 0;
-                return Json(navi);
+            {                
+                navi.error = "Bu bağlamda resim bulunmamaktadır!";                
+                navi.photoNo = 0;
+                return JSON(navi);
             }
 
             Photo photo = new Photo();
             switch (navi.seen)
             {
                 case 1:
-                    navi.imageNo = Math.Clamp(navi.imageNo, 1, navi.filesCount);
-                    photo = db.Photo.Where(u => u.ProjectID == projectID).Where(u => u.completed == false).Skip(navi.imageNo - 1).FirstOrDefault();
+                    navi.photoNo = Math.Clamp(navi.photoNo, 1, navi.filesCount);
+                    photo = db.Photo.Where(u => u.ProjectID == projectID).Where(u => u.completed == false).Skip(navi.photoNo - 1).FirstOrDefault();
                     break;
                 case 2:
-                    navi.imageNo = Math.Clamp(navi.imageNo, 1, navi.filesCount);
-                    photo = db.Photo.Where(u => u.ProjectID == projectID).Where(u => u.completed == true).Skip(navi.imageNo - 1).FirstOrDefault();
+                    navi.photoNo = Math.Clamp(navi.photoNo, 1, navi.filesCount);
+                    photo = db.Photo.Where(u => u.ProjectID == projectID).Where(u => u.completed == true).Skip(navi.photoNo - 1).FirstOrDefault();
                     break;
                 case 3:
-                    navi.imageNo = Math.Clamp(navi.imageNo, 1, navi.filesCount);
-                    photo = db.Photo.Where(u => u.ProjectID == projectID).Skip(navi.imageNo - 1).FirstOrDefault();
+                    navi.photoNo = Math.Clamp(navi.photoNo, 1, navi.filesCount);
+                    photo = db.Photo.Where(u => u.ProjectID == projectID).Skip(navi.photoNo - 1).FirstOrDefault();
                     break;
             }
 
             if (photo == null)
-            {
-                navi.error = "Bu sınırlar içinde resim yoktur. Sistem hatası olabilir!";
-                navi.path = "";
-                navi.filesCount = 0;
-                navi.imageID = 0;
-                navi.imageNo = 0;
-                return Json(navi);
+            {                
+                navi.error = "Bu sınırlar içinde resim yoktur. Sistem hatası olabilir!";                
+                navi.photoNo = 0;
+                return JSON(navi);
             }
 
             navi.path = Path.Combine(rootPath, photo.sysname);
-            navi.imageID = photo.ID;
+            navi.labels = photo.labels??"[]";
+            navi.photoID = photo.ID;
 
-            return Json(navi);
+            return JSON(navi);
         }
 
-        [HttpGet]
-        public IActionResult GetLabels(int photoID)
-        {
-            List<Label> labelList = db.Label.Include(u=>u.points).Where(u => u.photoID == photoID).ToList();
-            List<LabelViewModel> model = new List<LabelViewModel>();
-            foreach (var item in labelList)
-            {
-                var m = new LabelViewModel();
-                m.id = item.ID;
-                m.annoID = item.annoID;
-                m.photoID = item.photoID;
-                m.projectID = item.projectID;
-                m.sizeFactor = item.sizeFactor;
-                m.shape = (int)item.shape;
-
-                m.points = new List<Point>();
-                if(item.points != null)
-                    foreach (var p in item.points)
-                    {
-                        m.points.Add(new Point() { x = p.X, y = p.Y });
-                    }
-                model.Add(m);
-            }
-            return Json(model);
-        }
+        
 
         [HttpPost]
-        public IActionResult SetLabels(string labelListJson)
+        public IActionResult SetImage(string _navi)
         {
-            List<LabelViewModel> modelList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<LabelViewModel>>(labelListJson);
+            NavigateViewModel navi = Newtonsoft.Json.JsonConvert.DeserializeObject<NavigateViewModel>(_navi);
             try
             {
                 User currentUser = CurrentUser();
                 if (currentUser == null)
                     throw new Exception("Kullanıcı değilsiniz!");
 
-                // modelden GENEL bilgileri al
-                int projectID = modelList.FirstOrDefault().projectID;
-                int photoID = modelList.FirstOrDefault().photoID;
+                int projectID = navi.projectID;
+                int photoID = navi.photoID;
 
-                // Bu fotoğrafla ilgili tüm label bilgisini sil.
-                var previousListToDelete = db.Label.Where(u => u.photoID == photoID).ToList();
-                if (previousListToDelete.Any())
-                {
-                    db.RemoveRange(previousListToDelete);
-                    db.SaveChanges();
-                }
-
-                // modelden gelen label bilgisini listele
-                List<Label> labelList = new List<Label>();
-                foreach (var item in modelList)
-                {
-                    Annotation Annotation = db.Annotation.FirstOrDefault(u => u.ID == item.annoID);
-
-                    Label label = new Label();
-                    label.photoID = photoID;
-                    label.projectID = item.projectID;
-                    label.userID = currentUser.ID;
-                    label.annoID = item.annoID;
-                    label.sizeFactor = item.sizeFactor;
-                    label.shape = (SHAPE)item.shape;
-
-                    List<Coordinate> points = new List<Coordinate>();
-                    foreach (var p in item.points)
-                    {
-                        points.Add(new Coordinate() { X = p.x, Y = p.y });
-                    }
-                    label.points = points;
-
-                    labelList.Add(label);
-                }
-
-                // listelenen label bilgisini db'e kaydet.
-                db.AddRange(labelList);
-                db.SaveChanges();
-
-                // Fotoğrafın bilgisini güncelle.
                 Photo photo = db.Photo.FirstOrDefault(u => u.ID == photoID);
+                photo.labels = navi.labels;
                 photo.completed = true;
                 db.Update(photo);
                 db.SaveChanges();
@@ -200,6 +137,10 @@ namespace WebApplication1.Controllers
             }
         }
 
-        private User CurrentUser() => HttpContext.Session.GetObject<User>("user");
+        private JsonResult JSON(object obj)
+            => Json(Newtonsoft.Json.JsonConvert.SerializeObject(obj));
+
+        private User CurrentUser()
+            => HttpContext.Session.GetObject<User>("user");
     }
 }

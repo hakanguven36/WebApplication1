@@ -147,7 +147,6 @@
 </div>
 
 
-
 <script>
 
     // #region Classes
@@ -160,23 +159,18 @@
     }
     class NavigateViewModel {
         projectID;
+        photoID;
+        photoNo;
         seen;
-        imageNo;
-        //-------
         filesCount;
         path;
+        labels;
         error;
-        //-------
-        imageID;
     }
     class Label {
-        id;
-        projectID;
         photoID;
         annoID;
         points = [];
-        shape;
-        sizeFactor;
     }
     class Point {
         constructor(x, y) {
@@ -228,7 +222,6 @@
     var currentLabel = null;
     const mouse = new Point();
     var rect = new Rectangle();
-
     // #endregion
 
     var projectList = [];
@@ -248,10 +241,7 @@
         InitNavigation();
         StartAjaxChain();
     });
-    function StartAjaxChain() {
-        GetProjectList(); // =>
-    }
-
+    
     // #region Init&Update Preferences
     function InitPreferences() {
         let p = OzGetCookie("preferences");
@@ -290,11 +280,9 @@
         let crossHair = preferences.crossHair;
         $("#crossHair").prop("checked", crossHair);
     }
-
     // #endregion
 
     // #region onClick & onChange
-
     function ChangeProject() {
         let project = Number($("#project").val());
         navi.projectID = project;
@@ -305,14 +293,14 @@
 
     function ClickNavigate(increase) {
         if (increase) {
-            if (navi.imageNo < navi.filesCount) {
-                navi.imageNo++;
+            if (navi.photoNo < navi.filesCount) {
+                navi.photoNo++;
                 GetImage();
             }
         }
         else {
-            if (navi.imageNo > 1) {
-                navi.imageNo--;
+            if (navi.photoNo > 1) {
+                navi.photoNo--;
                 GetImage();
             }
         }
@@ -323,16 +311,15 @@
         preferences.seen = seen;
         SavePreferences();
         navi.seen = seen;
-        navi.imageNo = 1;
+        navi.photoNo = 1;
         GetImage();
     }
-    
 
     function Completed() {
+        // MakeLabelListValuesInteger(); bu fonksiyon iptal. yerine =>
+        AddLabelsToNavi();
 
-        MakeLabelListValuesInteger();
-
-        new OzAjax("/Home/SetLabels", POST, { labelListJson: JSON.stringify(labelList) }, CompletedSuccess).Send();
+        new OzAjax("/Home/SetImage", POST, { _navi: JSON.stringify(navi) }, CompletedSuccess).Send();
         function CompletedSuccess(data) {
             data = JSON.parse(data);
             if (data == "ok") {
@@ -354,16 +341,25 @@
     }
 
     function ChangeCSize(increase) {
+        let oldSizeFactor = image.width / preferences.csize;
+
         if (increase) {
             preferences.csize += 50;
         }
         else {
             preferences.csize -= 50;
+            if (preferences.csize <= 0)
+                preferences.csize = 50;
         }
+
         SavePreferences();
         UpdateCSize();
         UpdateCanvas();
-        ResizeLabelList()
+
+        let sizeFactor = image.width / preferences.csize;
+        let alpha = oldSizeFactor / sizeFactor;
+
+        ResizeLabelList(alpha);
         UpdateManvas();
     }
 
@@ -372,20 +368,26 @@
         SavePreferences();
     }
 
-    function MakeLabelListValuesInteger() {
+    function AddLabelsToNavi() {
+        let labels = [];
+        let sizeFactor = image.width / preferences.csize;
         for (var j = 0; j < labelList.length; j++) {
+            let label = new Label();
+            label.annoID = preferences.selectedAnno;
+            label.photoID = navi.photoID;
             for (var i = 0; i < labelList[j].points.length; i++) {
-                labelList[j].points[i].x = Math.floor(labelList[j].points[i].x);
-                labelList[j].points[i].y = Math.floor(labelList[j].points[i].y);
+                let p = labelList[j].points[i];
+                p.x *= sizeFactor;
+                p.y *= sizeFactor;
+                label.points.push(p);
             }
-            //labelList[j].sizeFactor = Math.floor(labelList[j].sizeFactor)
+            labels.push(label);
         }
+        navi.labels = labels;
     }
-
     // #endregion
 
     // #region Navigation
-
     function InitNavigation() {
         navi.projectID = Number($("#projectID").val());
         if (navi.projectID == 0) {
@@ -410,15 +412,17 @@
         });
     }
     function NaviGoTo(value) {
-        navi.imageNo = value;
-        navi.imageNo = Number(navi.imageNo).clamp(1, navi.filesCount);
+        navi.photoNo = value;
+        navi.photoNo = Number(navi.photoNo).clamp(1, navi.filesCount);
         GetImage();
         $("#naviInput").remove();
     }
-
     // #endregion
 
     // #region Ajax Chain
+    function StartAjaxChain() {
+        GetProjectList(); // =>
+    }
 
     function GetProjectList() {
         new OzAjax("/Home/GetProjectList", GET, { projectID: navi.projectID }, ProjectListSuccess).Send();
@@ -493,9 +497,9 @@
     }
 
     function GetImage() {
-        new OzAjax("/Home/GetImage", POST, { navi: navi }, Success).Send();
+        new OzAjax("/Home/GetImage", POST, { _navi: JSON.stringify(navi) }, Success).Send();
         function Success(data) {
-            navi = JSON.parse(data);
+            navi = JSON.parse(JSON.parse(data));
             if (navi.error != "") {
                 HataYaz(navi.error);
             }
@@ -511,11 +515,13 @@
     }
 
     function UpdateNaviScreen() {
-        let imageNo = navi.imageNo;
+        let photoNo = navi.photoNo;
         let filesCount = navi.filesCount;
-        $("#naviScreen").html(imageNo + "/" + filesCount);
+        $("#naviScreen").html(photoNo + "/" + filesCount);
     }
     function DrawCanvas() {
+        if (navi.path == "")
+            return;
         image.src = navi.path;
         image.addEventListener("load", UpdateCanvas);
         image.addEventListener("error", HataYaz);
@@ -533,12 +539,10 @@
     }
 
     function FillLabelList() {
-        labelList = [];
-        new OzAjax("/Home/GetLabels", GET, { photoID: navi.imageID }, GetLabelsSuccess).Send();
-        function GetLabelsSuccess(data) {
-            labelList = JSON.parse(data);
-            UpdateManvas();
-        }
+        labelList = JSON.parse(navi.labels);
+        let sizeFactor = image.width / preferences.csize;
+        ResizeLabelList(1 / sizeFactor);
+        UpdateManvas();
     }
 
     function HataYaz(hata) {
@@ -547,17 +551,14 @@
         ctx.clearRect(0, 0, preferences.csize, preferences.csize);
         $("#error").html(hata ?? "Bir hata oluştu!");
     }
-
     // #endregion
 
     // #region MANVAS
-
     var mouseEntered = false;
     var drawing = false;
     var pulling = false;
     
     //// TRIGERS ////
-
     manvas.addEventListener("contextmenu", function (e) {
         e.preventDefault();
     });
@@ -568,8 +569,6 @@
 
     manvas.addEventListener("mouseleave", function (e) {
         mouseEntered = false;
-        mouseButton = -1;
-        UpdateManvas(); // crossHair'ı kaldırsın.
     });
 
     manvas.addEventListener("mousedown", function (e) {
@@ -596,7 +595,6 @@
     manvas.addEventListener("mouseup", function (e) {
         switch (e.button) {
             case 0:                
-                // currentLabel'ı listeye aktar ve boşalt
                 // TODO: belirli alanın üzerindeyse push yapılacak!
                 drawing = false;
                 labelList.push(currentLabel);
@@ -631,17 +629,18 @@
                     break;
             }
         }
-        else if (pulling)
+        else if (pulling) {
             MoveLabel(e.movementX, e.movementY);
+        }
 
         UpdateManvas();
     });
 
     function UpdateManvas() {
         ClearManvas();
-        CrossHair();
         DrawLabels();
         DrawCurrentLabel();
+        CrossHair();
     }
 
     function DrawCurrentLabel() {
@@ -700,11 +699,8 @@
     }
     function InitCurrentLabel() {
         currentLabel = new Label();
-        currentLabel.shape = preferences.shape;
         currentLabel.annoID = preferences.selectedAnno;
-        currentLabel.sizeFactor = image.width / preferences.csize;
-        currentLabel.photoID = navi.imageID;
-        currentLabel.projectID = navi.projectID;
+        currentLabel.photoID = navi.photoID;
         switch (preferences.shape) {
             case 0:
                 rect = new Rectangle(mouse.x, mouse.y, mouse.x + 1, mouse.y + 1, true);
@@ -750,17 +746,13 @@
     function WriteListToConsole() {
         console.log("LABELLIST=> ", JSON.stringify(labelList));
     }
-    function ResizeLabelList() {
+    function ResizeLabelList(alpha) {
         for (var j = 0; j < labelList.length; j++) {
-            let label = labelList[j];
-            let label_sizeFactor = label.sizeFactor;
-            let current_sizeFactor = image.width / preferences.csize;
-            let alpha = label_sizeFactor / current_sizeFactor;
+            let label = labelList[j];            
             for (var i = 0; i < label.points.length; i++) {
-                labelList[j].points[i].x = label.points[i].x * alpha;
-                labelList[j].points[i].y = label.points[i].y * alpha;
-            }
-            labelList[j].sizeFactor = current_sizeFactor;
+                labelList[j].points[i].x *= alpha;
+                labelList[j].points[i].y *= alpha;
+            }            
         }
     }
 
@@ -783,27 +775,19 @@
     }
 
 
-    // Bu fonksiyon ç/alıntı. https://www.jeffreythompson.org/collision-detection/poly-point.php
+    // Kaynak: https://www.jeffreythompson.org/collision-detection/poly-point.php
     function Collision(vertices, px, py) {
         var collision = false;
 
-        // go through each of the vertices, plus
-        // the next vertex in the list
         var next = 0;
         for (var current = 0; current < vertices.length; current++) {
 
-            // get next vertex in list
-            // if we've hit the end, wrap around to 0
             next = current + 1;
             if (next == vertices.length) next = 0;
 
-            // get the PVectors at our current position
-            // this makes our if statement a little cleaner
-            var vc = vertices[current];    // c for "current"
-            var vn = vertices[next];       // n for "next"
+            var vc = vertices[current];
+            var vn = vertices[next];
 
-            // compare position, flip 'collision' variable
-            // back and forth
             if (((vc.y >= py && vn.y < py) || (vc.y < py && vn.y >= py)) &&
                 (px < (vn.x - vc.x) * (py - vc.y) / (vn.y - vc.y) + vc.x)) {
                 collision = !collision;
@@ -811,8 +795,6 @@
         }
         return collision;
     }
-
-
     // #endregion
 
 
@@ -823,118 +805,6 @@
 
      AYRICA TÜM JSON ALIŞVERİŞİNİ string İLE YAPALIM ve NEWTONSOFT KULLANALIM...
      */
-
-
-
-
-    /*
-
-    function GetImage() {
-        if (selectedProjectID == 0) {
-            $("#error").html("Bir proje seçiniz.");
-            return;
-        }
-        new OzAjax("/Home/GetImage", POST, { navi: navi }, NaviSendSuccess).Send();
-        function NaviSendSuccess(data) {
-            navi = JSON.parse(data);
-            if (navi.error != "") {
-                $("#error").html(navi.error);
-            }
-            else {
-                console.log(JSON.stringify(data));
-            }
-        }
-    }
-
-    function SelectProject(pid) {
-        pid = Number(pid);
-        window.location = "/?projectID=" + pid;
-    }
-
-
-    function PlaceAnnoList() {
-
-        for (var i = 0; i < annoList.length; i++) {
-            let btn = $("<button>");
-            btn.html(annoList[i].name);
-            btn.addClass("annoBtn");
-            btn.data("annoid", i);
-            btn.data("color", annoList[i].color);
-            btn.data("textcolor", annoList[i].textColor);
-
-            btn.click(SelectAnno);
-            $("#annoListDiv").append(btn);
-
-        }
-        PaintAnnoBtns();
-    }
-    function PaintAnnoBtns() {
-        $(".annoBtn").each(function (i, e) {
-            if (i == preferences.selectedAnno) {
-                let color = $(e).data("color");
-                let textColor = $(e).data("textcolor");
-                $(e).css({
-                    "color": textColor,
-                    "background-color": color,
-                });
-            }
-            else {
-                let color = $(e).data("color");
-                $(e).css({
-                    "color": color,
-                    "background-color": "white"
-                });
-            }
-        });
-    }
-
-
-
-
-
-    function SelectAnno() {
-        let annoID = Number($(this).data("annoid"));
-        preferences.selectedAnno = annoID;
-        SavePreferences();
-        PaintAnnoBtns();
-    }
-    function ChangeSeen() {
-        preferences.seen = Number($("#seen").val());
-        SavePreferences();
-        InitNavigation();
-        GetImage();
-    }
-    function SeenUpdate() {
-        $("#seen").val(preferences.seen);
-    }
-
-    function ChangeCanvasSize(incr) {
-        if (incr) {
-            preferences.csize += 50;
-            SavePreferences();
-            CanvasSizeUpdate();
-        }
-        else {
-            preferences.csize -= 50;
-            SavePreferences();
-            CanvasSizeUpdate();
-        }
-    }
-
-
-
-
-    // #region Trigers
-    $(".spnShape").click(function () {
-        let shapeNo = Number($(this).data("shape"));
-        preferences.shape = shapeNo;
-        SavePreferences();
-        ShapeUpdate();
-    });
-    // #endregion
-
-*/
-
 
 </script>
 

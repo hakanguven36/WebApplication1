@@ -44,10 +44,6 @@ namespace WebApplication1
             // services.AddTransient<GoogleRecapService>();
             services.Configure<GenelAyarlar>(Configuration.GetSection("GenelAyarlar"));
             services.AddControllersWithViews();
-                
-                
-
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

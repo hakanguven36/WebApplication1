@@ -13,6 +13,7 @@ namespace WebApplication1.Models
         public string name { get; set; }
 
         public List<Annotation> annoList { get; set; }
-        
+
+        public List<Photo> photos { get; set; }
     }
 }

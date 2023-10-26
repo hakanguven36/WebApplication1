@@ -104,5 +104,17 @@ namespace WebApplication1.Controllers
                 return Json(e.Message);
             }
         }
+
+        public IActionResult GetLabelsInJson(int id)
+        {
+            Project project = db.Project.Include(u=>u.photos).FirstOrDefault(u => u.ID == id);
+            List<Photo> photos = project.photos;
+            List<object> labels = new List<object>();
+            foreach (var item in photos)
+            {
+                labels.Add(new { photo = item.orjname , labels = item.labels });
+            }
+            return Json(JsonConvert.SerializeObject(labels));
+        }
     }
 }

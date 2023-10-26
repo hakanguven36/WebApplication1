@@ -9,8 +9,8 @@ using WebApplication1.Models;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(MyContext))]
-    [Migration("20231024102804_migBir")]
-    partial class migBir
+    [Migration("20231026124927_miginit")]
+    partial class miginit
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -43,59 +43,6 @@ namespace WebApplication1.Migrations
                     b.ToTable("Annotation");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.Coordinate", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("LabelID")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("X")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Y")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("LabelID");
-
-                    b.ToTable("Coordinate");
-                });
-
-            modelBuilder.Entity("WebApplication1.Models.Label", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("annoID")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("photoID")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("projectID")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("shape")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<float>("sizeFactor")
-                        .HasColumnType("REAL");
-
-                    b.Property<int>("userID")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("photoID");
-
-                    b.ToTable("Label");
-                });
-
             modelBuilder.Entity("WebApplication1.Models.Photo", b =>
                 {
                     b.Property<int>("ID")
@@ -118,6 +65,9 @@ namespace WebApplication1.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("imageFormat")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("labels")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("orjname")
@@ -187,32 +137,10 @@ namespace WebApplication1.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.Coordinate", b =>
-                {
-                    b.HasOne("WebApplication1.Models.Label", "Label")
-                        .WithMany("points")
-                        .HasForeignKey("LabelID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Label");
-                });
-
-            modelBuilder.Entity("WebApplication1.Models.Label", b =>
-                {
-                    b.HasOne("WebApplication1.Models.Photo", "Photo")
-                        .WithMany()
-                        .HasForeignKey("photoID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Photo");
-                });
-
             modelBuilder.Entity("WebApplication1.Models.Photo", b =>
                 {
                     b.HasOne("WebApplication1.Models.Project", "Project")
-                        .WithMany()
+                        .WithMany("photos")
                         .HasForeignKey("ProjectID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -220,14 +148,11 @@ namespace WebApplication1.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.Label", b =>
-                {
-                    b.Navigation("points");
-                });
-
             modelBuilder.Entity("WebApplication1.Models.Project", b =>
                 {
                     b.Navigation("annoList");
+
+                    b.Navigation("photos");
                 });
 #pragma warning restore 612, 618
         }
