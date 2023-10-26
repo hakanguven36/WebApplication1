@@ -131,7 +131,6 @@
         CrossHair
         <input type="checkbox" id="crossHair" onclick="ClickCrossHair()" />
     </label>
-    <button onclick="WriteListToConsole()">Listeyi Göster</button>
 </div>
 
 <div class="mainDiv">
@@ -315,10 +314,43 @@
         GetImage();
     }
 
-    function Completed() {
-        // MakeLabelListValuesInteger(); bu fonksiyon iptal. yerine =>
-        AddLabelsToNavi();
+    function DeletePhoto() {
+        var questionDiv = $("<h3>").html("Veritabanından kaldırın veya tamamen silin. Şu resim:\n" + navi.path);
+        var answer1Btn = $("<button>")
+            .addClass("btn btn-warning")
+            .html("Kaldır")
+            .click(function () {
+                DeletePhotoConfirmed(false);
+            });
+        var answer2Btn = $("<button>")
+            .addClass("btn btn-danger")
+            .html("Tamamen SİL!")
+            .click(function () {
+            DeletePhotoConfirmed(true);
+        });
+        var answer3Btn = $("<button>").addClass("btn btn-secondary").html("İptal").click(this.Close);
+        var buttonsPanel = $("<div>");
+        var confirmerBody = $("<div>");
 
+        confirmerBody.append(questionDiv);
+        buttonsPanel.append(answer1Btn);
+        buttonsPanel.append(answer2Btn);
+        buttonsPanel.append(answer3Btn);
+        confirmerBody.append(buttonsPanel);
+        OzModal.Show("Sorulur", confirmerBody);
+    }
+
+    function DeletePhotoConfirmed(hardRemove=false) {
+        
+        new OzAjax("/Uploader/RemovePhotoFromDB", GET, { id: navi.photoID, hardRemove: hardRemove }, DeleteSuccess).Send();
+        function DeleteSuccess(data) {
+            OzModal.Info("", data, 2000);
+            GetImage();
+        }
+    }
+
+    function Completed() {
+        AddLabelsToNavi();
         new OzAjax("/Home/SetImage", POST, { _navi: JSON.stringify(navi) }, CompletedSuccess).Send();
         function CompletedSuccess(data) {
             data = JSON.parse(data);
@@ -373,17 +405,19 @@
         let sizeFactor = image.width / preferences.csize;
         for (var j = 0; j < labelList.length; j++) {
             let label = new Label();
-            label.annoID = preferences.selectedAnno;
+            label.annoID = labelList[j].annoID;
             label.photoID = navi.photoID;
+
             for (var i = 0; i < labelList[j].points.length; i++) {
                 let p = labelList[j].points[i];
-                p.x *= sizeFactor;
-                p.y *= sizeFactor;
-                label.points.push(p);
+                let new_p = new Point();
+                new_p.x = p.x * sizeFactor;
+                new_p.y = p.y * sizeFactor;
+                label.points.push(new_p);
             }
             labels.push(label);
         }
-        navi.labels = labels;
+        navi.labels = JSON.stringify(labels);
     }
     // #endregion
 
@@ -496,7 +530,7 @@
         });
     }
 
-    function GetImage() {
+    function GetImage() {                
         new OzAjax("/Home/GetImage", POST, { _navi: JSON.stringify(navi) }, Success).Send();
         function Success(data) {
             navi = JSON.parse(JSON.parse(data));
@@ -507,10 +541,7 @@
                 $("#error").html("");
             }
             UpdateNaviScreen();
-            DrawCanvas();
-            selectedLabel = -1;
-            ClearCurrentLabel();
-            FillLabelList();
+            DrawCanvas(); // =>
         }
     }
 
@@ -523,9 +554,16 @@
         if (navi.path == "")
             return;
         image.src = navi.path;
-        image.addEventListener("load", UpdateCanvas);
+        image.addEventListener("load", OnCanvasLoaded);
         image.addEventListener("error", HataYaz);
     }
+    function OnCanvasLoaded() {
+        UpdateCanvas();
+        selectedLabel = -1;
+        ClearCurrentLabel();
+        FillLabelList();
+    }
+
     function UpdateCanvas() {
         if (image.width > 0) {
             let oran = image.width / image.height;
@@ -539,9 +577,18 @@
     }
 
     function FillLabelList() {
-        labelList = JSON.parse(navi.labels);
+        let naviLabels = JSON.parse(navi.labels);
+        labelList = [];
+        for (var i = 0; i < naviLabels.length; i++) {
+            let label = new Label();
+            label.photoID = naviLabels[i].photoID;
+            label.annoID = naviLabels[i].annoID;
+            label.points = naviLabels[i].points;
+            labelList.push(label);
+        }
         let sizeFactor = image.width / preferences.csize;
         ResizeLabelList(1 / sizeFactor);
+        
         UpdateManvas();
     }
 
@@ -563,12 +610,27 @@
         e.preventDefault();
     });
 
+    document.addEventListener("keyup", function (e) {
+        switch (e.keyCode) {
+            case 46:
+                if (selectedLabel != -1) {
+                    labelList.splice(selectedLabel, 1);
+                    selectedLabel = -1;
+                    UpdateManvas();
+                }
+                break;
+
+        }
+    });
+
+
     manvas.addEventListener("mouseenter", function (e) {
         mouseEntered = true;
     });
 
     manvas.addEventListener("mouseleave", function (e) {
         mouseEntered = false;
+        UpdateManvas();
     });
 
     manvas.addEventListener("mousedown", function (e) {
@@ -595,9 +657,10 @@
     manvas.addEventListener("mouseup", function (e) {
         switch (e.button) {
             case 0:                
-                // TODO: belirli alanın üzerindeyse push yapılacak!
                 drawing = false;
-                labelList.push(currentLabel);
+                let bboxArea = BBoxAreaCalculator(currentLabel.points);
+                if (bboxArea>16)
+                    labelList.push(currentLabel);
                 ClearCurrentLabel();
                 break;
             case 1:
@@ -637,6 +700,7 @@
     });
 
     function UpdateManvas() {
+        
         ClearManvas();
         DrawLabels();
         DrawCurrentLabel();
@@ -666,12 +730,12 @@
         mtx.lineWidth = 5;
         mtx.stroke();
     }
+
     function DrawLabels() {
         if (labelList.length < 1)
             return;
 
         for (var j = 0; j < labelList.length; j++) {
-
             let label = labelList[j];
             
             mtx.beginPath();
@@ -696,7 +760,9 @@
             }
             mtx.stroke();
         }
+            
     }
+
     function InitCurrentLabel() {
         currentLabel = new Label();
         currentLabel.annoID = preferences.selectedAnno;
@@ -717,13 +783,16 @@
             default:
         }
     }
+
     function ClearCurrentLabel() {
         currentLabel = null;
     }
+
     function ClearManvas() {
         mtx.beginPath();
         mtx.clearRect(0, 0, manvas.width, manvas.height);
     }
+
     function CrossHair() {
         if (!preferences.crossHair)
             return;
@@ -734,18 +803,20 @@
         mtx.globalAlpha = 0.4;
 
         // vertical line
+        mtx.beginPath();
         mtx.moveTo(mouse.x, 0);
         mtx.lineTo(mouse.x, manvas.height);
+        mtx.closePath();
         mtx.stroke();
         // horizontal line
+        mtx.beginPath();
         mtx.moveTo(0, mouse.y);
         mtx.lineTo(manvas.width, mouse.y);
         mtx.stroke();
+        mtx.closePath();
         mtx.globalAlpha = 1.0;
     }
-    function WriteListToConsole() {
-        console.log("LABELLIST=> ", JSON.stringify(labelList));
-    }
+
     function ResizeLabelList(alpha) {
         for (var j = 0; j < labelList.length; j++) {
             let label = labelList[j];            
@@ -794,6 +865,23 @@
             }
         }
         return collision;
+    }
+    
+    function BBoxAreaCalculator(points) {
+        let boundingMin = new Point(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+        let boundingMax = new Point(0, 0);
+        for (var i = 0; i < points.length; i++) {
+            let point = points[i];
+            if (point.x < boundingMin.x)
+                boundingMin.x = point.x;
+            if (point.x > boundingMax.x)
+                boundingMax.x = point.x;
+            if (point.y < boundingMin.y)
+                boundingMin.y = point.y;
+            if (point.y > boundingMax.y)
+                boundingMax.y = point.y;
+        }
+        return (boundingMax.x - boundingMin.x) * (boundingMax.y - boundingMin.y);
     }
     // #endregion
 

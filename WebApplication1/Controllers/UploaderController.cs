@@ -114,7 +114,37 @@ namespace WebApplication1.Controllers
                 db.Remove(photo);
                 db.SaveChanges();
             }
-            return Json("Silindi!");
+            return Json("Resim silindi!");
+        }
+
+        public IActionResult RemovePhotoFromDB(int id, bool hardRemove)
+        {
+            try
+            {
+                if (hardRemove)
+                {
+                    return ResmiSil(id);
+                }
+                else
+                {
+                    Photo photo = db.Photo.FirstOrDefault(u => u.ID == id);
+                    string photoName = photo.orjname;
+                    if (photo != null)
+                    {
+                        db.Remove(photo);
+                        db.SaveChanges();
+                        return Json("Şu resim kaldırıldı=> " + photoName );
+                    }
+                    else
+                    {
+                        return Json("Hata: Resim bulunamadı!");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                return Json(e.Message);
+            }
         }
 
         public IActionResult ShowPreview(int id)
