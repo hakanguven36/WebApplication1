@@ -131,6 +131,11 @@
         CrossHair
         <input type="checkbox" id="crossHair" onclick="ClickCrossHair()" />
     </label>
+    <label>
+        Çember Nokta Sayısı:
+        <input type="number" min="8" max="64" id="circlePoints"/>
+    </label>
+    
 </div>
 
 <div class="mainDiv">
@@ -207,12 +212,50 @@
 
     }
     Rectangle.prototype.GetPoints = function () {
-        let pointsOfRect = [];
-        pointsOfRect.push(new Point(this.beginX, this.beginY));
-        pointsOfRect.push(new Point(this.endX, this.beginY));
-        pointsOfRect.push(new Point(this.endX, this.endY));
-        pointsOfRect.push(new Point(this.beginX, this.endY));
-        return pointsOfRect;
+        let plist = [];
+        plist.push(new Point(this.beginX, this.beginY));
+        plist.push(new Point(this.endX, this.beginY));
+        plist.push(new Point(this.endX, this.endY));
+        plist.push(new Point(this.beginX, this.endY));
+        return plist;
+    }
+
+    class Circle{
+        constructor(centerX, centerY) {
+            this.centerX = centerX;
+            this.centerY = centerY;
+            this.moveX = centerX;
+            this.moveY = centerY;
+            this.radius = Math.sqrt((this.moveX - this.centerX) ** 2 + (this.moveY - this.centerY) ** 2);
+            if (this.radius <= 0) this.radius = 1;            
+        }
+    }
+    Circle.prototype.Move = function (mouseX, mouseY) {
+        this.moveX = mouseX;
+        this.moveY = mouseY;
+        this.radius = Math.sqrt((this.moveX - this.centerX) ** 2 + (this.moveY - this.centerY) ** 2);
+    }
+    Circle.prototype.GetPoints = function () {
+        let circlePoints = Number( $("#circlePoints").val());
+        circlePoints = circlePoints.clamp(8, 64);
+        let plist = [];
+        let radyan = (Math.PI * 2) / circlePoints;
+        for (var i = 0; i < circlePoints; i++) {
+            plist.push(new Point(this.centerX + this.radius * Math.sin(i * radyan), this.centerY + this.radius * Math.cos(i * radyan)));
+        }
+        return plist;
+    }
+
+    class Polygon {
+        constructor(beginX, beginY) {
+            this.beginX = beginX;
+            this.beginY = beginY;
+            this.points = [];
+            this.points.push(new Point(this.beginX, this.beginY));
+        }
+    }
+    Polygon.prototype.AddPoint = function (nextX, nextY) {
+        this.points.push(new Point(nextX, nextY));
     }
 
     var preferences = new Preferences();
@@ -221,6 +264,8 @@
     var currentLabel = null;
     const mouse = new Point();
     var rect = new Rectangle();
+    var circle = new Circle();
+    var polygon = new Polygon();
     // #endregion
 
     var projectList = [];
@@ -633,6 +678,7 @@
         UpdateManvas();
     });
 
+    var polydrawing = false;
     manvas.addEventListener("mousedown", function (e) {
         switch (e.button) {
             case 0:
@@ -640,12 +686,37 @@
                     alert("Sınıf seçiniz!");
                     return;
                 }
-                InitCurrentLabel();
-                drawing = true;
+                if (preferences.shape == 3) {
+                    if (!polydrawing) {
+                        polydrawing = true;
+                        drawing = false;
+                        polygon = new Polygon(e.offsetX, e.offsetY);
+
+                        // AYRI METOD YAZMALIYIM. UpdateManvas içinde DrawCurrentPolygon() yöntemi çağırılacak.
+                        // bu yöntemde Path kapatılmadan çizim yapılacak.
+                        // Her noktada 8 piksellik dolu daire ile nokta ifade edilecek.
+                        // ilk noktada yine tıklanırsa ve en az 3 nokta var ise ve alan iyiyse labelList'e aktarılabilir.
+                        // drawing ve polydrawing ikisinden sadece biri açılabilir.
+                    }
+                    else {
+
+                    }
+                    return;
+                }
+                else {
+                    InitCurrentLabel();
+                    drawing = true;
+                    polydrawing = false;
+                }
                 break;
             case 1:
                 break;
             case 2:
+                if (polydrawing) {
+                    polydrawing = false;
+                    return;
+                }
+
                 SelectLabel();
                 UpdateManvas();                
                 if (selectedLabel != -1)
@@ -677,6 +748,7 @@
 
         if (drawing) {
             let firstPoint = currentLabel.points[0];
+            console.log(firstPoint);
             switch (preferences.shape) {
                 case 0:
                     rect = new Rectangle(firstPoint.x, firstPoint.y, mouse.x, mouse.y, true);
@@ -687,6 +759,8 @@
                     currentLabel.points = rect.GetPoints();
                     break;
                 case 2:
+                    circle.Move(mouse.x, mouse.y);
+                    currentLabel.points = circle.GetPoints();
                     break;
                 case 3:
                     break;
@@ -703,6 +777,7 @@
         
         ClearManvas();
         DrawLabels();
+        DrawCurrentPolygon();
         DrawCurrentLabel();
         CrossHair();
     }
@@ -777,8 +852,12 @@
                 currentLabel.points.push(rect.GetPoints());
                 break;
             case 2:
+                circle = new Circle(mouse.x, mouse.y);
+                currentLabel.points.push(circle.GetPoints());
                 break;
             case 3:
+                polygon = new Polygon(mouse.x, mouse.y);
+                
                 break;
             default:
         }

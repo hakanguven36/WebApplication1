@@ -22,10 +22,9 @@ namespace WebApplication1.Controllers
             this.db = db;
         }
 
-        
         public IActionResult Index()
         {
-            return View(db.Project.Include(u=>u.annoList).ToList());
+            return View(db.Project.Include(u => u.annoList).Include(u => u.photos).ToList());
         }
 
         public IActionResult Create()
@@ -105,14 +104,22 @@ namespace WebApplication1.Controllers
             }
         }
 
-        public IActionResult GetLabelsInJson(int id)
+        public IActionResult DownloadProject(int id)
         {
             Project project = db.Project.Include(u=>u.photos).FirstOrDefault(u => u.ID == id);
+            if(project == null)
+            {
+                return Json("Hata: Proje bulunamadı!");
+            }
             List<Photo> photos = project.photos;
+            if (photos.Count == 0)
+            {
+                return Json("Hata: Projede fotoğraf yok!");
+            }
             List<object> labels = new List<object>();
             foreach (var item in photos)
             {
-                labels.Add(new { photo = item.orjname , labels = item.labels });
+                labels.Add(new { photo = item.orjname, labels = item.labels });
             }
             return Json(JsonConvert.SerializeObject(labels));
         }
