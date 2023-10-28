@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using WebApplication1.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace WebApplication1
 {
@@ -31,6 +32,7 @@ namespace WebApplication1
             services.AddDbContext<MyContext>();
             services.AddMvc(option => option.EnableEndpointRouting = false)
                 .AddRazorRuntimeCompilation()
+                
                 //.AddJsonOptions(opt => opt.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping)
                 //.AddJsonOptions(opt => opt.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve)
                 .AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
@@ -42,6 +44,16 @@ namespace WebApplication1
             });
             // services.Configure<GoogleReCaptchaSettings>(Configuration.GetSection("GoogleReCaptcha"));
             // services.AddTransient<GoogleRecapService>();
+            services.Configure<FormOptions>(options =>
+            {
+                // Set the limit to 256 MB
+                options.MultipartBodyLengthLimit = 268435456;
+            });
+            services.Configure<IISServerOptions>(options =>
+            {
+                options.MaxRequestBodySize = 268435456;
+            });
+
             services.Configure<GenelAyarlar>(Configuration.GetSection("GenelAyarlar"));
             services.AddControllersWithViews();
         }

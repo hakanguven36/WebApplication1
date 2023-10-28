@@ -49,6 +49,8 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
+        [DisableRequestSizeLimit]
+        [RequestFormLimits(MultipartBodyLengthLimit = 268435456)]
         public IActionResult Yukleyici(IFormCollection form)
         {
             var files = form.Files;

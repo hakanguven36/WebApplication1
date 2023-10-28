@@ -135,7 +135,7 @@
         Çember Nokta Sayısı:
         <input type="number" min="8" max="64" id="circlePoints"/>
     </label>
-    
+    <button onclick="Goster()">Bas</button>
 </div>
 
 <div class="mainDiv">
@@ -247,21 +247,37 @@
     }
 
     class Polygon {
-        constructor(beginX, beginY) {
-            this.beginX = beginX;
-            this.beginY = beginY;
+        constructor() {
             this.points = [];
-            this.points.push(new Point(this.beginX, this.beginY));
         }
     }
-    Polygon.prototype.AddPoint = function (nextX, nextY) {
-        this.points.push(new Point(nextX, nextY));
+    Polygon.prototype.AddPoint = function () {
+        this.points.push(new Point(mouse.x, mouse.y));
     }
+    Polygon.prototype.GetPoints = function () {
+        return this.points;
+    }
+    Polygon.prototype.MoveLast = function () {
+        this.points[this.points.length - 1] = new Point(mouse.x, mouse.y);
+    }
+    Polygon.prototype.DeleteLastPoint = function () {
+        this.points.pop();
+        if (this.points.length == 1)
+            this.points = [];
+    }
+    Polygon.prototype.IsHome = function () {
+        if (this.points.length < 3)
+            return false;
+        if (Math.hypot(this.points[0].x - mouse.x, this.points[0].y - mouse.y) < 10)
+            return true;
+        return false;
+    }
+
 
     var preferences = new Preferences();
     var navi = new NavigateViewModel();
     var labelList = [];
-    var currentLabel = null;
+    var currentLabel = new Label();
     const mouse = new Point();
     var rect = new Rectangle();
     var circle = new Circle();
@@ -664,6 +680,10 @@
                     UpdateManvas();
                 }
                 break;
+            case 27:
+                polygon = new Polygon();
+                UpdateManvas();
+                break;
 
         }
     });
@@ -678,61 +698,73 @@
         UpdateManvas();
     });
 
-    var polydrawing = false;
+    
     manvas.addEventListener("mousedown", function (e) {
+        mouse.x = e.offsetX;
+        mouse.y = e.offsetY;
+
         switch (e.button) {
             case 0:
+
                 if (preferences.selectedAnno == -1) {
                     alert("Sınıf seçiniz!");
                     return;
                 }
-                if (preferences.shape == 3) {
-                    if (!polydrawing) {
-                        polydrawing = true;
-                        drawing = false;
-                        polygon = new Polygon(e.offsetX, e.offsetY);
 
-                        // AYRI METOD YAZMALIYIM. UpdateManvas içinde DrawCurrentPolygon() yöntemi çağırılacak.
-                        // bu yöntemde Path kapatılmadan çizim yapılacak.
-                        // Her noktada 8 piksellik dolu daire ile nokta ifade edilecek.
-                        // ilk noktada yine tıklanırsa ve en az 3 nokta var ise ve alan iyiyse labelList'e aktarılabilir.
-                        // drawing ve polydrawing ikisinden sadece biri açılabilir.
-                    }
-                    else {
+                selectedLabel = -1;
+                drawing = false;
 
-                    }
-                    return;
-                }
-                else {
-                    InitCurrentLabel();
-                    drawing = true;
-                    polydrawing = false;
+                switch (preferences.shape) {
+                    case 0:
+                    case 1:
+                    case 2:
+                        drawing = true;
+                        InitCurrentLabel();
+                        break;
+                    case 3:
+                        if (polygon.points.length == 0) {
+                            polygon = new Polygon();
+                            polygon.AddPoint();
+                        }
+                        polygon.AddPoint();
+                        if (polygon.IsHome())
+                            FinishPolyAddToList();
+                        break;
                 }
                 break;
             case 1:
                 break;
             case 2:
-                if (polydrawing) {
-                    polydrawing = false;
+                if (polygon.points.length > 0) {
+                    polygon.DeleteLastPoint();
+                    polygon.MoveLast();
+                    UpdateManvas();
                     return;
                 }
-
-                SelectLabel();
-                UpdateManvas();                
-                if (selectedLabel != -1)
-                    pulling = true;
-                break;
+                else {
+                    SelectLabel();
+                    pulling = selectedLabel != -1;
+                }
         }
+        UpdateManvas();
     });
 
     manvas.addEventListener("mouseup", function (e) {
         switch (e.button) {
-            case 0:                
-                drawing = false;
-                let bboxArea = BBoxAreaCalculator(currentLabel.points);
-                if (bboxArea>16)
-                    labelList.push(currentLabel);
-                ClearCurrentLabel();
+            case 0:
+                switch (preferences.shape) {
+                    case 0:
+                    case 1:
+                    case 2:
+                        drawing = false;
+                        let bboxArea = BBoxAreaCalculator(currentLabel.points);
+                        if (bboxArea > 16)
+                            labelList.push(currentLabel);
+                        ClearCurrentLabel();
+                        break;
+                    case 3:
+                        break;
+                }
                 break;
             case 1:
                 break;
@@ -745,31 +777,43 @@
     manvas.addEventListener("mousemove", function (e) {
         mouse.x = e.offsetX;
         mouse.y = e.offsetY;
-
-        if (drawing) {
-            let firstPoint = currentLabel.points[0];
-            console.log(firstPoint);
-            switch (preferences.shape) {
-                case 0:
-                    rect = new Rectangle(firstPoint.x, firstPoint.y, mouse.x, mouse.y, true);
+        switch (preferences.shape) {
+            case 0:
+                if (drawing) {
+                    rect = new Rectangle(currentLabel.points[0].x, currentLabel.points[0].y, mouse.x, mouse.y, true);
                     currentLabel.points = rect.GetPoints();
-                    break;
-                case 1:
-                    rect = new Rectangle(firstPoint.x, firstPoint.y, mouse.x, mouse.y, false);
+                }
+                else if (pulling) {
+                    MoveLabel(e.movementX, e.movementY);
+                }
+                break;
+            case 1:
+                if (drawing) {
+                    rect = new Rectangle(currentLabel.points[0].x, currentLabel.points[0].y, mouse.x, mouse.y, false);
                     currentLabel.points = rect.GetPoints();
-                    break;
-                case 2:
+                }
+                else if (pulling) {
+                    MoveLabel(e.movementX, e.movementY);
+                }
+                break;
+            case 2:
+                if (drawing) {
                     circle.Move(mouse.x, mouse.y);
                     currentLabel.points = circle.GetPoints();
-                    break;
-                case 3:
-                    break;
-            }
+                }
+                else if (pulling) {
+                    MoveLabel(e.movementX, e.movementY);
+                }
+                break;
+            case 3:
+                if (polygon.points.length > 0) {
+                    polygon.MoveLast(mouse.x, mouse.y);
+                }
+                else if (pulling) {
+                    MoveLabel(e.movementX, e.movementY);
+                }
+                break;
         }
-        else if (pulling) {
-            MoveLabel(e.movementX, e.movementY);
-        }
-
         UpdateManvas();
     });
 
@@ -782,10 +826,34 @@
         CrossHair();
     }
 
+    function DrawCurrentPolygon() {
+        let points = polygon.GetPoints();
+        if (points.length == 0)
+            return;
+
+        mtx.beginPath();
+        mtx.moveTo(points[0].x, points[0].y);
+        for (var i = 1; i < points.length; i++) {
+            mtx.lineTo(points[i].x, points[i].y);
+        }
+        mtx.globalAlpha = 1.0;
+        mtx.strokeStyle = colorList[preferences.selectedAnno];
+        mtx.lineWidth = 1;
+        mtx.stroke();
+
+        mtx.globalAlpha = 0.2;
+        mtx.beginPath();
+        mtx.arc(points[0].x, points[0].y, 10, 0, Math.PI * 2);
+        mtx.closePath();
+        mtx.fillStyle = colorList[preferences.selectedAnno];
+        mtx.fill();
+
+    }
+
     function DrawCurrentLabel() {
         if (!drawing)
             return;
-        
+
         mtx.beginPath();
 
         let firstPoint = currentLabel.points[0];
@@ -797,13 +865,14 @@
         }
         mtx.closePath();
 
-        mtx.globalAlpha = 0.1;
-        mtx.fillStyle = colorList[preferences.selectedAnno];
-        mtx.fill();
         mtx.globalAlpha = 1.0;
         mtx.strokeStyle = colorList[preferences.selectedAnno];
         mtx.lineWidth = 5;
         mtx.stroke();
+
+        mtx.globalAlpha = 0.1;
+        mtx.fillStyle = colorList[preferences.selectedAnno];
+        mtx.fill();
     }
 
     function DrawLabels() {
@@ -821,12 +890,7 @@
                 mtx.lineTo(p.x, p.y);
             }
             mtx.closePath();
-            mtx.globalAlpha = 0.2;
-            if (selectedLabel == j) {
-                mtx.globalAlpha = 0.1;
-            }
-            mtx.fillStyle = colorList[label.annoID];
-            mtx.fill();
+
             mtx.globalAlpha = 1.0;
             mtx.strokeStyle = colorList[label.annoID];
             mtx.lineWidth = 2;
@@ -834,8 +898,27 @@
                 mtx.lineWidth = 5;
             }
             mtx.stroke();
+
+            mtx.globalAlpha = 0.2;
+            if (selectedLabel == j) {
+                mtx.globalAlpha = 0.1;
+            }
+            mtx.fillStyle = colorList[label.annoID];
+            mtx.fill();
         }
             
+    }
+
+    function FinishPolyAddToList() {
+
+        let polyLabel = new Label();
+        polyLabel.annoID = preferences.selectedAnno;
+        polyLabel.photoID = navi.photoID;
+
+        polygon.points.pop();
+        polyLabel.points = polygon.GetPoints();
+        labelList.push(polyLabel);
+        polygon = new Polygon();
     }
 
     function InitCurrentLabel() {
@@ -864,7 +947,7 @@
     }
 
     function ClearCurrentLabel() {
-        currentLabel = null;
+        currentLabel = new Label();
     }
 
     function ClearManvas() {
@@ -962,8 +1045,20 @@
         }
         return (boundingMax.x - boundingMin.x) * (boundingMax.y - boundingMin.y);
     }
+
+    function Goster() {
+        console.log("labelList.length: ", labelList.length);
+        console.log("polygon.points.length: ", polygon.points.length);
+    }
+
     // #endregion
 
+
+    // AYRI METOD YAZMALIYIM. UpdateManvas içinde DrawCurrentPolygon() yöntemi çağırılacak.
+    // bu yöntemde Path kapatılmadan çizim yapılacak.
+    // Her noktada 8 piksellik dolu daire ile nokta ifade edilecek.
+    // ilk noktada yine tıklanırsa ve en az 3 nokta var ise ve alan iyiyse labelList'e aktarılabilir.
+    // drawing ve polydrawing ikisinden sadece biri açılabilir.
 
     /*
      zoom in zoom out yapınca kayıyor..
