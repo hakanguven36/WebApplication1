@@ -38,4 +38,10 @@
     <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Database\data.db">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

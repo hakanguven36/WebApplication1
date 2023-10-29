@@ -20,10 +20,7 @@ namespace WebApplication1
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.ConfigureKestrel((context, options) =>
-                    {
-                        options.Limits.MaxRequestBodySize = 268435456;
-                    })
+                    webBuilder
                     .UseStartup<Startup>();
                 });
     }

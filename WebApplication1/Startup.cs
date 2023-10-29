@@ -44,16 +44,7 @@ namespace WebApplication1
             });
             // services.Configure<GoogleReCaptchaSettings>(Configuration.GetSection("GoogleReCaptcha"));
             // services.AddTransient<GoogleRecapService>();
-            services.Configure<FormOptions>(options =>
-            {
-                // Set the limit to 256 MB
-                options.MultipartBodyLengthLimit = 268435456;
-            });
-            services.Configure<IISServerOptions>(options =>
-            {
-                options.MaxRequestBodySize = 268435456;
-            });
-
+            
             services.Configure<GenelAyarlar>(Configuration.GetSection("GenelAyarlar"));
             services.AddControllersWithViews();
         }
@@ -84,7 +75,7 @@ namespace WebApplication1
                 
             //};
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseSession();
             app.UseRouting();
