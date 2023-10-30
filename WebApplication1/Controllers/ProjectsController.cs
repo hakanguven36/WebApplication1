@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using WebApplication1.Araclar;
 using WebApplication1.Models;
 using System.Text.Json;
+using System.Text;
 
 namespace WebApplication1.Controllers
 {
@@ -106,22 +107,56 @@ namespace WebApplication1.Controllers
 
         public IActionResult DownloadProject(int id)
         {
-            Project project = db.Project.Include(u=>u.photos).FirstOrDefault(u => u.ID == id);
-            if(project == null)
+            Project project = db.Project.Include(u => u.photos).Include(u=>u.annoList).FirstOrDefault(u => u.ID == id);
+            if (project == null)
+                throw new Exception("Hata: Proje bulunamadı!");
+
+            List<Photo> photoList = project.photos;
+            if (photoList.Count == 0)
+                throw new Exception("Hata: Projede fotoğraf yok!");
+
+
+            List<object> photoObjs = new List<object>();
+            foreach (Photo photo in photoList)
             {
-                return Json("Hata: Proje bulunamadı!");
+                List<object> labelObjs = new List<object>();
+                if (!string.IsNullOrWhiteSpace(photo.labels))
+                {
+                    List<Label> labelList = JsonConvert.DeserializeObject<List<Label>>(photo.labels);
+                    foreach (Label label in labelList)
+                    {
+                        List<object> pointObjs = new List<object>();
+                        foreach (Point point in label.points)
+                        {
+                            pointObjs.Add(new { x = (int)point.x, y = (int)point.y });
+                        }
+                        labelObjs.Add(new { annoID = label.annoID, points = Stringify(pointObjs) });
+                    }
+                }
+                photoObjs.Add(new { photoName = photo.orjname, photoLabels = Stringify(labelObjs) });
             }
-            List<Photo> photos = project.photos;
-            if (photos.Count == 0)
+
+            var annoList = project.annoList.Select(u => u.name).ToList();
+            List<object> annoObjs = new List<object>();
+            foreach (string item in annoList)
             {
-                return Json("Hata: Projede fotoğraf yok!");
+                annoObjs.Add(item);
             }
-            List<object> labels = new List<object>();
-            foreach (var item in photos)
-            {
-                labels.Add(new { photo = item.orjname, labels = item.labels });
-            }
-            return Json(JsonConvert.SerializeObject(labels));
+            object projectObj = new { projectName = project.name, annoList = Stringify(annoObjs), photos = Stringify(photoObjs) };
+
+            string jsonobj = JsonConvert.SerializeObject(projectObj);
+            return File(GetByteArray(jsonobj), "text/json", project.name + new Guid() + ".json");
+        }
+
+        private byte[] GetByteArray(string source)
+        {
+            Encoding ascii = Encoding.ASCII;
+            return ascii.GetBytes(source);
+        }
+
+        private string Stringify(List<object> objList)
+        {
+            return JsonConvert.SerializeObject(objList);
         }
     }
 }

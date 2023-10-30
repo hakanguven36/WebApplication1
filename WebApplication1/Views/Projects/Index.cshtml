@@ -106,6 +106,8 @@
     }
 
     function DownloadProject(id) {
+        window.location = "/Projects/DownloadProject?id=" + id;
+        return;
         new OzAjax("/Projects/DownloadProject", GET, { id: id }, DownloadSuccess).Send();
         function DownloadSuccess(data) {
             OzModal.Show("Etiketler", JSON.parse( data));
