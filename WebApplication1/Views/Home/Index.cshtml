@@ -121,6 +121,7 @@
     <span class="spnShape" onclick="ClickShape(this)" data-shape="1"><img src="~/sysimg/rect.png" height="24" /></span>
     <span class="spnShape" onclick="ClickShape(this)" data-shape="2"><img src="~/sysimg/circle.png" height="24" /></span>
     <span class="spnShape" onclick="ClickShape(this)" data-shape="3"><img src="~/sysimg/poligon.png" height="24" /></span>
+    <button class="btn btn-sm btn-outline-danger" onclick="ClearAllLabels()">Clear All</button>
     &nbsp;&nbsp;&nbsp;&nbsp;
     <span class="sizeBtnBorder">
         <button class="sizeBtn" onclick="ChangeCSize(false)">-</button>
@@ -658,6 +659,7 @@
         canvas.height = preferences.csize;
         ctx.clearRect(0, 0, preferences.csize, preferences.csize);
         $("#error").html(hata ?? "Bir hata oluştu!");
+        ClearManvas();
     }
     // #endregion
 
@@ -757,6 +759,8 @@
                     case 1:
                     case 2:
                         drawing = false;
+                        if (currentLabel.points.length == 1)
+                            break;                            
                         let bboxArea = BBoxAreaCalculator(currentLabel.points);
                         if (bboxArea > 16)
                             labelList.push(currentLabel);
@@ -1044,6 +1048,11 @@
                 boundingMax.y = point.y;
         }
         return (boundingMax.x - boundingMin.x) * (boundingMax.y - boundingMin.y);
+    }
+
+    function ClearAllLabels() {
+        labelList = [];
+        UpdateManvas();
     }
 
     function Goster() {

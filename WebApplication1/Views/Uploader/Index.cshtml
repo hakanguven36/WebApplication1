@@ -12,7 +12,7 @@
                     <select class="form-control" id="project" name="projectID" style="max-width:20em">
                         @foreach (var item in Model)
                         {
-                            <option value="@item.ID">@item.name</option>
+                            <option value="@item.ID" data-photocount="@item.photos.Count" >@item.name</option>
                         }
                     </select>
                 </div>
@@ -25,25 +25,54 @@
     </div>
     <hr />
     <div id="fileListDiv"></div>
+    <center>
+        <div id="pager"></div>
+    </center>
 </div>
 
 <script>
     var projectID = 0;
+    var pageNo = 1;
+    var pageSize = 50;
 
     $(document).ready(function () {
         ListFiles();
+        let photocount = Number($("#project").find(":selected").data("photocount"));
+        MakePageButtons(photocount);
     });
 
     $("#project").on("change", function () {
         ListFiles();
+        let photocount = Number($("#project").find(":selected").data("photocount"));
+        MakePageButtons(photocount);
     });
 
     function ListFiles() {
         projectID = Number($("#project").val());
-        new OzAjax("/Uploader/ListFilesOfProject", GET, { projectID: projectID }, Successful).Send();
+        new OzAjax("/Uploader/ListFilesOfProject", GET, { projectID: projectID, pageNo: pageNo, pageSize: pageSize }, Successful).Send();
         function Successful(data) {
             $("#fileListDiv").html(data);
         }
+    }
+
+
+    function MakePageButtons(photocount) {
+        let pageCount = Math.floor(photocount / pageSize);
+        console.log(pageCount);
+        for (var i = 1; i < pageCount + 2; i++) {
+            let button = $("<button>");
+            button.addClass("pageBtn");
+            button.data("pageno", i);
+            button.click(GoToPage);
+            button.html(i);
+
+            $("#pager").append(button.clone(true));
+        }
+    }
+
+    function GoToPage() {
+        pageNo = Number($(this).data("pageno"));
+        ListFiles();
     }
 
     

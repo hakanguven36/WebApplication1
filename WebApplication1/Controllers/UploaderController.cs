@@ -29,7 +29,7 @@ namespace WebApplication1.Controllers
         private const int RotateRight = 8;
 
         private readonly MyContext db;
-        string rootPath = "";
+        private string rootPath = "";
 
         public UploaderController(MyContext db, IWebHostEnvironment environment)
         {
@@ -39,12 +39,21 @@ namespace WebApplication1.Controllers
 
         public IActionResult Index()
         {
-            return View(db.Project.ToList());
+            return View(db.Project.Include(u=>u.photos).ToList());
         }
 
-        public IActionResult ListFilesOfProject(int projectID)
+        public IActionResult ListFilesOfProject(int projectID, int pageNo, int pageSize)
         {
-            List<Photo> photoList = db.Photo.Where(u => u.ProjectID == projectID).ToList();
+
+            int photoCount = db.Photo.Where(u => u.ProjectID == projectID).Count();
+            pageSize = pageSize == 0 ? 50 : pageSize;
+            int pageCount = photoCount / pageSize;
+            if (photoCount % pageSize > 0)
+                pageCount++;
+            pageNo = Math.Clamp(pageNo, 1, pageCount);
+
+            List<Photo> photoList = db.Photo.Where(u => u.ProjectID == projectID).Skip((pageNo - 1) * pageSize).Take(pageSize).ToList();
+
             return PartialView(photoList);
         }
 

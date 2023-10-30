@@ -107,7 +107,7 @@ namespace WebApplication1.Controllers
 
         public IActionResult DownloadProject(int id)
         {
-            Project project = db.Project.Include(u => u.photos).Include(u=>u.annoList).FirstOrDefault(u => u.ID == id);
+            Project project = db.Project.Include(u => u.photos).Include(u => u.annoList).FirstOrDefault(u => u.ID == id);
             if (project == null)
                 throw new Exception("Hata: Proje bulunamadı!");
 
@@ -115,37 +115,56 @@ namespace WebApplication1.Controllers
             if (photoList.Count == 0)
                 throw new Exception("Hata: Projede fotoğraf yok!");
 
-
-            List<object> photoObjs = new List<object>();
-            foreach (Photo photo in photoList)
+            ModelJson.Project project_json = new ModelJson.Project();
+            project_json.name = project.name;
+            List<ModelJson.Annotation> annotationList = new List<ModelJson.Annotation>();
+            foreach (var annotation in project.annoList)
             {
-                List<object> labelObjs = new List<object>();
-                if (!string.IsNullOrWhiteSpace(photo.labels))
+                ModelJson.Annotation anno_json = new ModelJson.Annotation() { name = annotation.name };
+                annotationList.Add(anno_json);
+            }
+            project_json.annotations = annotationList;
+
+
+            List<ModelJson.Photo> photoList_json = new List<ModelJson.Photo>();
+            foreach (Photo photo in project.photos)
+            {
+                ModelJson.Photo photo_json = new ModelJson.Photo();
+                photo_json.path = photo.orjname;
+
+                List<ModelJson.Label> labelList_json = new List<ModelJson.Label>();
+                // 1) string'i normal label'a çevir
+                List<Label> labelList = JsonConvert.DeserializeObject<List<Label>>(photo.labels);
+                // 2) label'a label_json'a çevir
+                foreach (var label in labelList)
                 {
-                    List<Label> labelList = JsonConvert.DeserializeObject<List<Label>>(photo.labels);
-                    foreach (Label label in labelList)
+                    ModelJson.Label label_json = new ModelJson.Label();
+                    label_json.annoID = label.annoID;
+
+
+                    List<ModelJson.Point> pointList_json = new List<ModelJson.Point>();
+                    foreach (var point in label.points)
                     {
-                        List<object> pointObjs = new List<object>();
-                        foreach (Point point in label.points)
-                        {
-                            pointObjs.Add(new { x = (int)point.x, y = (int)point.y });
-                        }
-                        labelObjs.Add(new { annoID = label.annoID, points = Stringify(pointObjs) });
+                        pointList_json.Add(new ModelJson.Point() { x = (int)point.x, y = (int)point.y });
                     }
+
+                    label_json.points = pointList_json;
+
+                    labelList_json.Add(label_json);
                 }
-                photoObjs.Add(new { photoName = photo.orjname, photoLabels = Stringify(labelObjs) });
+
+
+
+                photo_json.labels = labelList_json;
+
+                photoList_json.Add(photo_json);
             }
 
-            var annoList = project.annoList.Select(u => u.name).ToList();
-            List<object> annoObjs = new List<object>();
-            foreach (string item in annoList)
-            {
-                annoObjs.Add(item);
-            }
-            object projectObj = new { projectName = project.name, annoList = Stringify(annoObjs), photos = Stringify(photoObjs) };
+            project_json.photos = photoList_json;
 
-            string jsonobj = JsonConvert.SerializeObject(projectObj);
-            return File(GetByteArray(jsonobj), "text/json", project.name + new Guid() + ".json");
+
+            string jsonobj = JsonConvert.SerializeObject(new { project_json });
+            return File(GetByteArray(jsonobj), "text/json", "label.json");
         }
 
         private byte[] GetByteArray(string source)
