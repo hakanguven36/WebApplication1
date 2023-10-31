@@ -1,0 +1,2 @@
+﻿Resim yok ise Uploader-index hata veriyor.
+label isimlerinin ve

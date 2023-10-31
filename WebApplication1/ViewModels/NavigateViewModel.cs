@@ -13,6 +13,7 @@ namespace WebApplication1.ViewModels
         public int seen { get; set; } // or completed
         public int filesCount { get; set; }
         public string path { get; set; }
+        public string orjname { get; set; }
         public string labels { get; set; }
         public string error { get; set; }
     }

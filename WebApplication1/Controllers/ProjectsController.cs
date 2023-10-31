@@ -134,7 +134,9 @@ namespace WebApplication1.Controllers
 
                 List<ModelJson.Label> labelList_json = new List<ModelJson.Label>();
                 // 1) string'i normal label'a çevir
-                List<Label> labelList = JsonConvert.DeserializeObject<List<Label>>(photo.labels);
+                List<Label> labelList = string.IsNullOrWhiteSpace(photo.labels)? 
+                    new List<Label>() : 
+                    JsonConvert.DeserializeObject<List<Label>>(photo.labels);
                 // 2) label'a label_json'a çevir
                 foreach (var label in labelList)
                 {
@@ -162,8 +164,9 @@ namespace WebApplication1.Controllers
 
             project_json.photos = photoList_json;
 
-
-            string jsonobj = JsonConvert.SerializeObject(new { project_json });
+            var jsonSettings = new JsonSerializerSettings();
+            jsonSettings.Culture = System.Globalization.CultureInfo.CurrentCulture;
+            string jsonobj = JsonConvert.SerializeObject(project_json, jsonSettings);
             return File(GetByteArray(jsonobj), "text/json", "label.json");
         }
 

@@ -45,6 +45,7 @@ namespace WebApplication1.Controllers
             NavigateViewModel navi = Newtonsoft.Json.JsonConvert.DeserializeObject<NavigateViewModel>(_navi);
             navi.error = "";
             navi.path = "";
+            navi.orjname = "";
             navi.labels = "[]";
             navi.filesCount = 0;
             navi.photoID = 0;
@@ -102,6 +103,7 @@ namespace WebApplication1.Controllers
             }
 
             navi.path = Path.Combine(rootPath, photo.sysname);
+            navi.orjname = photo.orjname;
             navi.labels = photo.labels??"[]";
             navi.photoID = photo.ID;
 

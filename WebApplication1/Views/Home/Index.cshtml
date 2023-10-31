@@ -15,42 +15,47 @@
 
     .naviScreenContainer {
         display: inline-block;
-        width: 80px;
+        width: 40px;
         text-align: center;
     }
 
     .naviInput {
         position: absolute;
-        width: 80px;
+        width: 40px;
         border-radius: 5px;
         z-index: 3;
     }
 
     .spnShape {
-        border: solid white 1px;
-        padding: 5px;
+        background-color:white;
         cursor: pointer;
+        padding:4px;
+        height: 28px;
     }
 
         .spnShape:hover {
-            border: solid black 1px;
+            background-color: rgb(180,180,180);
         }
 
     .spnShapeSelected {
-        border: solid black 1px;
+        background-color: rgb(180,180,180);
+    }
+
+    .selectedSVG {
+        background-color: rgb(180,180,180);
     }
 
     .sizeBtn {
         border: none;
-        padding-right: 8px;
-        padding-left: 8px;
+        padding-right: 4px;
+        padding-left: 4px;
         cursor: pointer;
     }
 
     .sizeBtnBorder {
         text-align: center;
-        margin-left: 10px;
-        margin-right: 10px;
+        margin-left: 0px;
+        margin-right: 0px;
     }
 
     .mainDiv {
@@ -94,6 +99,10 @@
         top: 5px;
         left: 5px;
     }
+
+    #circlePoints{
+        width:3em;
+    }
 </style>
 
 <input type="hidden" id="projectID" value="@ViewBag.projectID" />
@@ -101,51 +110,45 @@
     <select class="form-select-sm" id="project" onchange="ChangeProject()">
         <option style="color:gray; font-style:italic">Proje Seçiniz...</option>
     </select>
+    <button class="btnNavi" onclick="ClickNavigate(false)"><</button>
     <span class="naviScreenContainer" id="naviScreenContainer">
         <span id="naviScreen" class="naviScreen" onclick="ShowNaviInput()">
             0/0
         </span>
     </span>
-    <button class="btnNavi" onclick="ClickNavigate(false)">< önceki</button>
-    <button class="btnNavi" onclick="ClickNavigate(true)">sonraki ></button>
+    <button class="btnNavi" onclick="ClickNavigate(true)">></button>
     <select id="seen" class="form-control-sm" onchange="ChangeSeen()">
-        <option value="1">İşlenmemişler</option>
-        <option value="2">İşlenmişler</option>
-        <option value="3">Tamamı</option>
+        <option value="1">Undone</option>
+        <option value="2">Done</option>
+        <option value="3">All</option>
     </select>
-    <button class="btn btn-sm btn-outline-danger" onclick="DeletePhoto()"> Resmi Sil </button>
-    <button class="btn btn-outline-success" id="completedBtn" onclick="Completed()">Değişiklikleri Kaydet</button>
+    <button class="btn btn-sm btn-outline-danger" onclick="DeletePhoto()">Delete</button>
+    <button class="btn btn-outline-success" id="completedBtn" onclick="Completed()">Save</button>
     &nbsp;&nbsp;&nbsp;&nbsp;
-
-    <span class="spnShape" onclick="ClickShape(this)" data-shape="0"><img src="~/sysimg/square.png" height="24" /></span>
-    <span class="spnShape" onclick="ClickShape(this)" data-shape="1"><img src="~/sysimg/rect.png" height="24" /></span>
-    <span class="spnShape" onclick="ClickShape(this)" data-shape="2"><img src="~/sysimg/circle.png" height="24" /></span>
-    <span class="spnShape" onclick="ClickShape(this)" data-shape="3"><img src="~/sysimg/poligon.png" height="24" /></span>
-    <button class="btn btn-sm btn-outline-danger" onclick="ClearAllLabels()">Clear All</button>
+    <svg class="spnShape" onclick="ClickShape(this)" data-shape="0" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 300 300" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"><g><g><rect width="260" height="260" rx="0" ry="0" transform="translate(20 20)" fill="none" stroke="#000" stroke-width="20" /></g></g><line x1="-85.645965" y1="-87.184516" x2="94.354035" y2="92.815484" transform="translate(145.645965 147.184516)" fill="none" stroke="#000" stroke-width="15" /><line x1="90" y1="-90" x2="-90" y2="90" transform="translate(150 150)" fill="none" stroke="#000" stroke-width="15" /><line x1="31.304537" y1="-0.147323" x2="-28.695463" y2="-0.147323" transform="translate(208.695463 60.147323)" fill="none" stroke="#000" stroke-width="15" /><line x1="31.304537" y1="-0.147323" x2="-28.695463" y2="-0.147323" transform="translate(208.695463 240.147323)" fill="none" stroke="#000" stroke-width="15" /><line x1="31.304537" y1="-0.147323" x2="-28.695463" y2="-0.147323" transform="translate(88.695463 240.147323)" fill="none" stroke="#000" stroke-width="15" /><line x1="31.304537" y1="-0.147323" x2="-28.695463" y2="-0.147323" transform="translate(88.695463 60.147324)" fill="none" stroke="#000" stroke-width="15" /><line x1="0" y1="-26.520881" x2="0" y2="33.479119" transform="translate(240 86.520882)" fill="none" stroke="#000" stroke-width="15" /><line x1="0" y1="-26.520881" x2="0" y2="33.479119" transform="translate(240 206.520881)" fill="none" stroke="#000" stroke-width="15" /><line x1="0" y1="-26.520881" x2="0" y2="33.479119" transform="translate(60 206.520881)" fill="none" stroke="#000" stroke-width="15" /><line x1="0" y1="-26.520881" x2="0" y2="33.479119" transform="translate(60 86.520882)" fill="none" stroke="#000" stroke-width="15" /></svg>
+    <svg class="spnShape" onclick="ClickShape(this)" data-shape="1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 300 300" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"><rect width="260" height="140" rx="0" ry="0" transform="translate(20 80)" fill="none" stroke="#000" stroke-width="20" /><line x1="-0.514265" y1="-46.283837" x2="-0.514265" y2="53.716163" transform="translate(150.514265 146.283837)" fill="none" stroke="#000" stroke-width="15" /><line x1="-99.767382" y1="0" x2="100.232618" y2="0" transform="translate(149.767382 150)" fill="none" stroke="#000" stroke-width="15" /><line x1="9.946349" y1="13.530916" x2="-20.053651" y2="-16.469084" transform="translate(240.053651 136.469084)" fill="none" stroke="#000" stroke-width="15" /><line x1="9.946349" y1="13.530916" x2="-20.053651" y2="-16.469084" transform="translate(140.053651 186.469084)" fill="none" stroke="#000" stroke-width="15" /><line x1="9.946349" y1="13.530916" x2="-20.053651" y2="-16.469084" transform="translate(170.053651 116.469084)" fill="none" stroke="#000" stroke-width="15" /><line x1="9.946349" y1="13.530916" x2="-20.053651" y2="-16.469084" transform="translate(70.053651 166.469084)" fill="none" stroke="#000" stroke-width="15" /><line x1="5" y1="-15.929602" x2="-25" y2="14.070398" transform="translate(245 165.929602)" fill="none" stroke="#000" stroke-width="15" /><line x1="5" y1="-15.929602" x2="-25" y2="14.070398" transform="translate(175 185.929602)" fill="none" stroke="#000" stroke-width="15" /><line x1="5" y1="-15.929602" x2="-25" y2="14.070398" transform="translate(145 115.929602)" fill="none" stroke="#000" stroke-width="15" /><line x1="5" y1="-15.929602" x2="-25" y2="14.070398" transform="translate(75 135.929602)" fill="none" stroke="#000" stroke-width="15" /></svg>
+    <svg class="spnShape" onclick="ClickShape(this)" data-shape="2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 300 300" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"><ellipse rx="130" ry="130" transform="translate(150 150)" fill="none" stroke="#000" stroke-width="20" /><ellipse rx="25" ry="25" transform="translate(150 150)" stroke-width="0" /></svg>
+    <svg class="spnShape" onclick="ClickShape(this)" data-shape="3" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 300 300" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"><ellipse rx="17.5" ry="17.5" transform="translate(77.454751 54.977376)" stroke-width="0" /><ellipse rx="17.5" ry="17.5" transform="translate(185 54.977376)" stroke-width="0" /><ellipse rx="17.5" ry="17.5" transform="translate(53.61991 256.787331)" stroke-width="0" /><ellipse rx="17.5" ry="17.5" transform="translate(150 171.414028)" stroke-width="0" /><ellipse rx="17.5" ry="17.5" transform="translate(231.900452 256.787331)" stroke-width="0" /><ellipse rx="17.5" ry="17.5" transform="translate(249.400452 171.414028)" stroke-width="0" /><line x1="11.917421" y1="-100.904977" x2="-11.91742" y2="100.904978" transform="translate(65.53733 155.882354)" fill="none" stroke="#000" stroke-width="15" /><line x1="-89.140271" y1="0" x2="89.140271" y2="0" transform="translate(142.760181 256.787331)" fill="none" stroke="#000" stroke-width="15" /><line x1="-8.75" y1="42.686651" x2="8.75" y2="-42.686652" transform="translate(240.650452 214.10068)" fill="none" stroke="#000" stroke-width="15" /><line x1="49.700226" y1="0" x2="-49.700226" y2="0" transform="translate(199.700226 171.414028)" fill="none" stroke="#000" stroke-width="15" /><line x1="-17.5" y1="58.218326" x2="17.5" y2="-58.218326" transform="translate(167.5 113.195703)" fill="none" stroke="#000" stroke-width="15" /><line x1="53.772625" y1="0" x2="-53.772624" y2="0" transform="translate(131.227376 54.977377)" fill="none" stroke="#000" stroke-width="15" /></svg>
+    <button class="btn btn-sm btn-outline-danger" onclick="ClearAllLabels()">Reset</button>
     &nbsp;&nbsp;&nbsp;&nbsp;
     <span class="sizeBtnBorder">
         <button class="sizeBtn" onclick="ChangeCSize(false)">-</button>
         <span id="csize" style="background-color:rgb(220,220,220)"></span>
         <button class="sizeBtn" onclick="ChangeCSize(true)">+</button>
     </span>
+    <svg height="24" id="crossHair" onclick="ClickCrossHair()" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 300 300" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"><g transform="matrix(.857188-.515003 0.515003 0.857188-4.125733 116.843123)"><polygon points="14.019238,-30 54.019238,70 -25.980762,70 14.019238,-30" transform="translate(99.855919 99.576665)" stroke-width="0" /><line x1="0" y1="-66.478034" x2="0" y2="66.478034" transform="translate(113.875157 181.084515)" fill="none" stroke="#000" stroke-width="20" /></g><line x1="0" y1="-75.149082" x2="0" y2="75.149082" transform="matrix(-1 0 0 1.015385 125.8505 220.15633)" fill="none" stroke="#000" stroke-width="10" /><line x1="0" y1="33.528052" x2="0" y2="-33.528052" transform="matrix(-1 0 0 1.343296 125.8505 55.694687)" fill="none" stroke="#000" stroke-width="10" /><line x1="-70.210921" y1="0" x2="70.21092" y2="0" transform="translate(219.251914 113.598181)" fill="none" stroke="#000" stroke-width="10" /><line x1="53.182427" y1="0" x2="-53.182427" y2="0" transform="translate(59.391029 113.598181)" fill="none" stroke="#000" stroke-width="10" /></svg>
+    &nbsp;&nbsp;&nbsp;&nbsp;
     <label>
-        CrossHair
-        <input type="checkbox" id="crossHair" onclick="ClickCrossHair()" />
+        <input type="number" min="4" max="64" id="circlePoints" value="24" onchange="ChangeCirclePoint()" />
     </label>
-    <label>
-        Çember Nokta Sayısı:
-        <input type="number" min="8" max="64" id="circlePoints"/>
-    </label>
-    <button onclick="Goster()">Bas</button>
 </div>
 
 <div class="mainDiv">
     <div class="annoListDiv">
-        <u>Sınıflar</u>
+        <u>Classes</u>
         <div id="annoListDiv"></div>
     </div>
     <div class="canvasDiv">
-        <div id="error" class="text-bg-danger"></div>
         <canvas id="canvas"></canvas>
         <canvas id="manvas"></canvas>
     </div>
@@ -159,8 +162,9 @@
         seen = 3;
         shape = 0;
         csize = 1000;
-        crossHair = true;
         selectedAnno = -1;
+        crossHair = true;
+        circlePoints = 24;
     }
     class NavigateViewModel {
         projectID;
@@ -169,6 +173,7 @@
         seen;
         filesCount;
         path;
+        orjname;
         labels;
         error;
     }
@@ -238,7 +243,7 @@
     }
     Circle.prototype.GetPoints = function () {
         let circlePoints = Number( $("#circlePoints").val());
-        circlePoints = circlePoints.clamp(8, 64);
+        circlePoints = circlePoints.clamp(4, 64);
         let plist = [];
         let radyan = (Math.PI * 2) / circlePoints;
         for (var i = 0; i < circlePoints; i++) {
@@ -289,12 +294,13 @@
     var annoList = [];
     var colorList = [];
 
-    const canvas = document.getElementById("canvas");
+    const canvas = document.getElementById("canvas");    
     const ctx = canvas.getContext("2d");
     const manvas = document.getElementById("manvas");
     const mtx = manvas.getContext("2d");
     var image = new Image();
-    var selectedLabel = -1;
+    var selectedLabel = -1;    
+    var loading = false;
 
     $(document).ready(function () {
         InitPreferences();
@@ -309,6 +315,7 @@
         if (p == "") SavePreferences();
         else preferences = JSON.parse(p);
         preferences.selectedAnno = -1;
+        canvas.width = canvas.height = 500;
     }
 
     function SavePreferences() {
@@ -320,6 +327,7 @@
         UpdateShape();
         UpdateCSize();
         UpdateCrossHair();
+        UpdateCirclePoint();
     }
 
     function UpdateSeen() {
@@ -338,9 +346,68 @@
         $("#csize").html(csize + "px");
     }
     function UpdateCrossHair() {
-        let crossHair = preferences.crossHair;
-        $("#crossHair").prop("checked", crossHair);
+        if (preferences.crossHair)
+            $("#crossHair").addClass("selectedSVG");
+        else
+            $("#crossHair").removeClass("selectedSVG");
     }
+
+    function UpdateCirclePoint() {
+        $("#circlePoints").val(preferences.circlePoints);
+    }
+
+    function Error(err) {
+        ClearCanvas();
+        ctx.font = "24px Comic Sans MS";
+        ctx.fillStyle = "red";
+        //ctx.textAlign = "center";
+        //ctx.fillText(err, canvas.width / 2, canvas.height / 2);
+        ctx.fillText(err, 60, 60);
+        ClearManvas();
+    }
+
+    function ClearCanvas() {
+        ctx.beginPath();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function Loading() {
+        ClearManvas();        
+        loading = true;
+        timer = setTimeout(LoadingAnimation, 200);
+    }
+    function Loaded() {
+        loading == false;
+        clearTimeout(timer);
+    }
+
+    var loadingIndex = 5;
+    var timer;
+    function LoadingAnimation() {
+        if (!loading)
+            return;
+
+        ClearCanvas();
+        function increaseGA() {
+            loadingIndex++;
+            if (loadingIndex == 20)
+                loadingIndex = 5;
+        }
+        increaseGA();
+
+        ctx.strokeStyle = "#111111";
+
+        ctx.globalAlpha = loadingIndex / 20;
+        ctx.font = "24px Comic Sans MS";
+        ctx.fillStyle = "black";
+        ctx.textAlign = "center";
+        ctx.fillText("Loading", manvas.width / 2, 200);
+
+        timer = setTimeout(LoadingAnimation, 50);
+        
+
+    }
+
     // #endregion
 
     // #region onClick & onChange
@@ -348,7 +415,7 @@
         let project = Number($("#project").val());
         navi.projectID = project;
         if (navi.projectID != 0)
-            $("#error").html("");
+            Error("");
         StartAjaxChain();
     }
 
@@ -377,20 +444,22 @@
     }
 
     function DeletePhoto() {
-        var questionDiv = $("<h3>").html("Veritabanından kaldırın veya tamamen silin. Şu resim:\n" + navi.path);
+        var questionDiv = $("<h6>").html("Veritabanından kaldırın veya tamamen silin.</br>Şu resim:</br>" + navi.orjname);
         var answer1Btn = $("<button>")
             .addClass("btn btn-warning")
+            .css({ "margin-right": "10px"})
             .html("Kaldır")
             .click(function () {
                 DeletePhotoConfirmed(false);
             });
         var answer2Btn = $("<button>")
             .addClass("btn btn-danger")
+            .css({ "margin-right": "10px"})
             .html("Tamamen SİL!")
             .click(function () {
             DeletePhotoConfirmed(true);
         });
-        var answer3Btn = $("<button>").addClass("btn btn-secondary").html("İptal").click(this.Close);
+        var answer3Btn = $("<button>").addClass("btn btn-secondary").html("İptal").click(OzModal.Close);
         var buttonsPanel = $("<div>");
         var confirmerBody = $("<div>");
 
@@ -399,7 +468,7 @@
         buttonsPanel.append(answer2Btn);
         buttonsPanel.append(answer3Btn);
         confirmerBody.append(buttonsPanel);
-        OzModal.Show("Sorulur", confirmerBody);
+        OzModal.Show("Resim Silme", confirmerBody);
     }
 
     function DeletePhotoConfirmed(hardRemove=false) {
@@ -422,7 +491,7 @@
                 setTimeout(function () { $("#completedBtn").html(oldHtml) }, 1000);
             }
             else {
-                HataYaz(data);
+                Error(data);
             }
         }
     }
@@ -458,7 +527,13 @@
     }
 
     function ClickCrossHair() {
-        preferences.crossHair = $("#crossHair").prop("checked");
+        preferences.crossHair = !preferences.crossHair;
+        UpdateCrossHair();
+        SavePreferences();
+    }
+
+    function ChangeCirclePoint() {
+        preferences.circlePoints = Number($("#circlePoints").val());
         SavePreferences();
     }
 
@@ -487,7 +562,7 @@
     function InitNavigation() {
         navi.projectID = Number($("#projectID").val());
         if (navi.projectID == 0) {
-            $("#error").html("Bir proje seçiniz.");
+            Error("Bir proje seçiniz.");
         }
         navi.seen = preferences.seen;
     }
@@ -570,6 +645,11 @@
         preferences.selectedAnno = Number($(this).data("annoid"));
         SavePreferences();
         PaintAnnoBtns();
+
+        if (selectedLabel != -1) {
+            labelList[selectedLabel].annoID = preferences.selectedAnno;
+            UpdateManvas();
+        }
     }
 
     function PaintAnnoBtns() {
@@ -592,18 +672,23 @@
         });
     }
 
-    function GetImage() {                
-        new OzAjax("/Home/GetImage", POST, { _navi: JSON.stringify(navi) }, Success).Send();
+    function GetImage() {
+        Loading();
+        new OzAjax("/Home/GetImage", POST, { _navi: JSON.stringify(navi) }, Success, Failure).Send();
         function Success(data) {
+            Loaded();
             navi = JSON.parse(JSON.parse(data));
             if (navi.error != "") {
-                HataYaz(navi.error);
+                Error(navi.error);
             }
             else {
-                $("#error").html("");
+                Error("");
             }
             UpdateNaviScreen();
             DrawCanvas(); // =>
+        }
+        function Failure(fail) {
+            Error(fail);
         }
     }
 
@@ -617,7 +702,7 @@
             return;
         image.src = navi.path;
         image.addEventListener("load", OnCanvasLoaded);
-        image.addEventListener("error", HataYaz);
+        image.addEventListener("error", Error);
     }
     function OnCanvasLoaded() {
         UpdateCanvas();
@@ -628,6 +713,7 @@
 
     function UpdateCanvas() {
         if (image.width > 0) {
+            //loaded();
             let oran = image.width / image.height;
             canvas.width = preferences.csize;
             canvas.height = canvas.width / oran;
@@ -654,13 +740,7 @@
         UpdateManvas();
     }
 
-    function HataYaz(hata) {
-        canvas.width = preferences.csize;
-        canvas.height = preferences.csize;
-        ctx.clearRect(0, 0, preferences.csize, preferences.csize);
-        $("#error").html(hata ?? "Bir hata oluştu!");
-        ClearManvas();
-    }
+    
     // #endregion
 
     // #region MANVAS
