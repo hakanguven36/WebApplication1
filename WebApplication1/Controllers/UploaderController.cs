@@ -44,12 +44,15 @@ namespace WebApplication1.Controllers
 
         public IActionResult ListFilesOfProject(int projectID, int pageNo, int pageSize)
         {
-
             int photoCount = db.Photo.Where(u => u.ProjectID == projectID).Count();
-            pageSize = pageSize == 0 ? 50 : pageSize;
-            int pageCount = photoCount / pageSize;
-            if (photoCount % pageSize > 0)
-                pageCount++;
+
+            if (photoCount == 0)
+            {
+                return PartialView(new List<Photo>());
+            }
+
+            pageSize = pageSize == 0 ? 30 : pageSize;
+            int pageCount = (int)Math.Ceiling(photoCount / (pageSize *1.0));
             pageNo = Math.Clamp(pageNo, 1, pageCount);
 
             List<Photo> photoList = db.Photo.Where(u => u.ProjectID == projectID).Skip((pageNo - 1) * pageSize).Take(pageSize).ToList();
@@ -65,7 +68,11 @@ namespace WebApplication1.Controllers
             var files = form.Files;
 
             if (files.Count < 1)
-                return Json("Hiç dosya gönderilmedi!");
+                return Json("No files has been sent!");
+
+            int formProjeID = int.Parse(form["projectID"].tooString());
+            if(formProjeID == 0)
+                return Json("Project can't be empty!");
 
             List<string> errorList = new List<string>();
 
@@ -88,8 +95,7 @@ namespace WebApplication1.Controllers
                         thumb.Save(Path.Combine(rootPath, "thumbs", sysname));
                     }
 
-                    Photo photo = new Photo();
-                    int formProjeID = int.Parse(form["projectID"].tooString());
+                    Photo photo = new Photo();                    
                     photo.Project = db.Project.FirstOrDefault(u => u.ID == formProjeID);
                     photo.contentType = contentType;
                     photo.sizeMB = lenght / (1024.0 * 1024.0);
@@ -107,7 +113,7 @@ namespace WebApplication1.Controllers
                 }
             }
             ViewBag.errorList = errorList;
-            return View();
+            return Json("ok");
         }
 
         public IActionResult ResmiSil(int id)

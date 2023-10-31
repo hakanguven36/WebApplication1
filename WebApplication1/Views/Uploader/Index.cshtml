@@ -1,29 +1,33 @@
 ﻿@model IEnumerable<WebApplication1.Models.Project>
 
 <div class="m-2">
-    <h4>Yeni Resim Yükle</h4>
+    <h5>Images of Project</h5>
     <hr />
     <div class="row">
         <div class="col-md">
             <form method="post" enctype="multipart/form-data" asp-controller="Uploader" asp-action="Yukleyici">
-                <div class="form-group">
-                    <label class="control-label" for="proje"></label>
-                    Proje Adı
-                    <select class="form-control" id="project" name="projectID" style="max-width:20em">
+
+                <label class="control-label" for="proje">
+                    Project Name
+                    <select id="project" name="projectID" style="max-width:20em" onchange="ListFiles()">
                         @foreach (var item in Model)
                         {
-                            <option value="@item.ID" data-photocount="@item.photos.Count" >@item.name</option>
+                            <option value="@item.ID" data-photocount="@item.photos.Count" data-sizeinmb="@item.photos.Sum(u=>u.sizeMB).ToString("0.00")">@item.name</option>
                         }
                     </select>
-                </div>
-                <span>Select File:</span>
-                <input type="file" name="postedFiles" multiple accept="image/*" />
-                <input type="submit" value="Upload" />
-                <br />
+                </label>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <span>
+                    <input type="file" name="postedFiles" multiple accept="image/*" placeholder="hello" title="Select Files" />
+                    <input type="submit" value="Upload" id="submitBtn" disabled />
+                </span>
+
+
             </form>
         </div>
     </div>
     <hr />
+    <div id="projectInfoDiv"></div>
     <div id="fileListDiv"></div>
     <center>
         <div id="pager"></div>
@@ -33,39 +37,48 @@
 <script>
     var projectID = 0;
     var pageNo = 1;
-    var pageSize = 50;
+    var pageSize = 30;
 
     $(document).ready(function () {
-        ListFiles();
-        let photocount = Number($("#project").find(":selected").data("photocount"));
-        MakePageButtons(photocount);
-    });
+        
+        if ($("#project").html().trim() == "") {
+            OzModal.Info("Proje Yok", "Lütfen bir proje oluşturunuz.", 3000);
+            return;
+        }
 
-    $("#project").on("change", function () {
         ListFiles();
-        let photocount = Number($("#project").find(":selected").data("photocount"));
-        MakePageButtons(photocount);
     });
 
     function ListFiles() {
         projectID = Number($("#project").val());
+
+        if (projectID != 0)
+            $("#submitBtn").removeAttr("disabled");
+
         new OzAjax("/Uploader/ListFilesOfProject", GET, { projectID: projectID, pageNo: pageNo, pageSize: pageSize }, Successful).Send();
         function Successful(data) {
+
             $("#fileListDiv").html(data);
+
+            let photocount = Number($("#project").find(":selected").data("photocount"));
+            MakePageButtons(photocount);
+
+            ShowProjectInfo();
         }
     }
-
-
+    
     function MakePageButtons(photocount) {
-        let pageCount = Math.floor(photocount / pageSize);
-        console.log(pageCount);
+        if (photocount <= pageSize)
+            return;
+
+        let pageCount = Math.ceil(photocount / pageSize);
+        
         for (var i = 1; i < pageCount + 2; i++) {
             let button = $("<button>");
             button.addClass("pageBtn");
             button.data("pageno", i);
             button.click(GoToPage);
             button.html(i);
-
             $("#pager").append(button.clone(true));
         }
     }
@@ -75,6 +88,15 @@
         ListFiles();
     }
 
+    function ShowProjectInfo() {
+        let pinfo = "Total Photo: ";
+        pinfo += $("#project").find(":selected").data("photocount");
+        pinfo += " - ";
+        pinfo += " Total Size: ";
+        pinfo += $("#project").find(":selected").data("sizeinmb");
+        pinfo += " MB ";
+        $("#projectInfoDiv").html(pinfo);
+    }
     
 </script>
 

@@ -10,6 +10,8 @@ using WebApplication1.Araclar;
 using WebApplication1.Models;
 using System.Text.Json;
 using System.Text;
+using System.IO;
+using Microsoft.AspNetCore.Hosting;
 
 namespace WebApplication1.Controllers
 {
@@ -17,10 +19,13 @@ namespace WebApplication1.Controllers
     public class ProjectsController : Controller
     {
         private readonly MyContext db;
+        private string rootPath = "";
 
-        public ProjectsController(MyContext db)
+
+        public ProjectsController(MyContext db, IWebHostEnvironment environment)
         {
             this.db = db;
+            rootPath = Path.Combine(environment.WebRootPath, "dosyalar");
         }
 
         public IActionResult Index()
@@ -38,7 +43,7 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                if(db.Project.FirstOrDefault(u=>u.name == project.name) != null)
+                if (db.Project.FirstOrDefault(u => u.name == project.name) != null)
                 {
                     return Json("", "Bu isimde bir proje zaten var!");
                 }
@@ -48,21 +53,21 @@ namespace WebApplication1.Controllers
 
                 return Json("Proje oluşturuldu.");
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return Json(e.Message);
             }
         }
-        
+
         [HttpGet]
         public IActionResult Edit(int id)
         {
-            var proje = db.Project.FirstOrDefault(u=>u.ID ==  id);
+            var proje = db.Project.FirstOrDefault(u => u.ID == id);
             if (proje == null)
             {
                 return Json("Proje bulunamadı!");
             }
-            
+
             return PartialView(proje);
         }
         public IActionResult GetAnnoList(int id)
@@ -94,9 +99,16 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var proje = db.Project.Include(u=>u.annoList).FirstOrDefault(u => u.ID == id);
+                Project proje = db.Project.Include(u => u.annoList).Include(u => u.photos).FirstOrDefault(u => u.ID == id);
+
+                foreach (var photo in proje.photos)
+                {
+                    ResmiSil(photo.sysname);
+                }
+
                 db.Remove(proje);
                 db.SaveChanges();
+
                 return Json("Silindi.");
             }
             catch (Exception e)
@@ -134,8 +146,8 @@ namespace WebApplication1.Controllers
 
                 List<ModelJson.Label> labelList_json = new List<ModelJson.Label>();
                 // 1) string'i normal label'a çevir
-                List<Label> labelList = string.IsNullOrWhiteSpace(photo.labels)? 
-                    new List<Label>() : 
+                List<Label> labelList = string.IsNullOrWhiteSpace(photo.labels) ?
+                    new List<Label>() :
                     JsonConvert.DeserializeObject<List<Label>>(photo.labels);
                 // 2) label'a label_json'a çevir
                 foreach (var label in labelList)
@@ -164,9 +176,7 @@ namespace WebApplication1.Controllers
 
             project_json.photos = photoList_json;
 
-            var jsonSettings = new JsonSerializerSettings();
-            jsonSettings.Culture = System.Globalization.CultureInfo.CurrentCulture;
-            string jsonobj = JsonConvert.SerializeObject(project_json, jsonSettings);
+            string jsonobj = JsonConvert.SerializeObject(project_json);
             return File(GetByteArray(jsonobj), "text/json", "label.json");
         }
 
@@ -176,9 +186,22 @@ namespace WebApplication1.Controllers
             return ascii.GetBytes(source);
         }
 
-        private string Stringify(List<object> objList)
+        private string Stringify(object obj)
         {
-            return JsonConvert.SerializeObject(objList);
+            return JsonConvert.SerializeObject(obj);
+        }
+
+
+        private void ResmiSil(string sysname)
+        {
+            FileInfo fi = new FileInfo(Path.Combine(rootPath, sysname));
+            if (fi.Exists)
+                fi.Delete();
+
+            FileInfo ft = new FileInfo(Path.Combine(rootPath, "thumbs", sysname));
+            if (ft.Exists)
+                ft.Delete();
         }
     }
 }
+

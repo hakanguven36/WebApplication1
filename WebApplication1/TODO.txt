@@ -1,2 +1,7 @@
-﻿Resim yok ise Uploader-index hata veriyor.
-label isimlerinin ve
+﻿+ Proje 0 ise Etiketleme sayfasında Error yaz..
++ proje silince resimleri de sil..
+
+=> uploader upload yüzdesi göster.
+	OzAjax.MultiSend() ile göndermeliyim. Şu anda normal form gönderiyor.
+
+- label isimlerinin ve proje isminin label.json içinde türkçe karakter sorunu.
