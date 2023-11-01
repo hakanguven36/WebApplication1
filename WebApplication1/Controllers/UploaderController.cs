@@ -65,55 +65,63 @@ namespace WebApplication1.Controllers
         [RequestFormLimits(MultipartBodyLengthLimit = 268435456)]
         public IActionResult Yukleyici(IFormCollection form)
         {
-            var files = form.Files;
-
-            if (files.Count < 1)
-                return Json("No files has been sent!");
-
-            int formProjeID = int.Parse(form["projectID"].tooString());
-            if(formProjeID == 0)
-                return Json("Project can't be empty!");
-
-            List<string> errorList = new List<string>();
-
-            foreach (IFormFile file in files)
+            try
             {
-                try
+                var files = form.Files;
+
+                if (files.Count < 1)
+                    throw new Exception("No files has been sent!");
+
+                int formProjeID = int.Parse(form["projectID"].tooString());
+                if (formProjeID == 0)
+                    throw new Exception("Project can't be empty!");
+
+                List<string> errorList = new List<string>();
+
+                foreach (IFormFile file in files)
                 {
-                    var contentType = file.ContentType;
-                    var fileName = file.FileName;
-                    var lenght = file.Length;
-                    string sysname = GetUniqueFileName(fileName);
+                    try
+                    {
+                        var contentType = file.ContentType;
+                        var fileName = file.FileName;
+                        var lenght = file.Length;
+                        string sysname = GetUniqueFileName(fileName);
 
-                    using (Stream stream = new MemoryStream()) { 
-                        file.CopyTo(stream);
-                        Image orjImage = new Bitmap(stream);
-                        //Image image1024 = ResizeTo1280w(orjImage);
-                        orjImage.Save(Path.Combine(rootPath, sysname));
+                        using (Stream stream = new MemoryStream())
+                        {
+                            file.CopyTo(stream);
+                            Image orjImage = new Bitmap(stream);
+                            //Image image1024 = ResizeTo1280w(orjImage);
+                            orjImage.Save(Path.Combine(rootPath, sysname));
 
-                        Image thumb = ResizeImage(orjImage, new Size(200,200));
-                        thumb.Save(Path.Combine(rootPath, "thumbs", sysname));
+                            Image thumb = ResizeImage(orjImage, new Size(200, 200));
+                            thumb.Save(Path.Combine(rootPath, "thumbs", sysname));
+                        }
+
+                        Photo photo = new Photo();
+                        photo.Project = db.Project.FirstOrDefault(u => u.ID == formProjeID);
+                        photo.contentType = contentType;
+                        photo.sizeMB = lenght / (1024.0 * 1024.0);
+                        photo.orjname = fileName;
+                        photo.extention = Path.GetExtension(fileName);
+                        photo.date = DateTime.Now;
+                        photo.completed = false;
+                        photo.sysname = sysname;
+                        db.Add(photo);
+                        db.SaveChanges();
                     }
-
-                    Photo photo = new Photo();                    
-                    photo.Project = db.Project.FirstOrDefault(u => u.ID == formProjeID);
-                    photo.contentType = contentType;
-                    photo.sizeMB = lenght / (1024.0 * 1024.0);
-                    photo.orjname = fileName;
-                    photo.extention = Path.GetExtension(fileName);
-                    photo.date = DateTime.Now;
-                    photo.completed = false;
-                    photo.sysname = sysname;
-                    db.Add(photo);
-                    db.SaveChanges();
+                    catch (Exception e)
+                    {
+                        errorList.Add(file.FileName + " yüklenemedi => " + e.Message.sapString(0, 200));
+                    }
                 }
-                catch(Exception e)
-                {
-                    errorList.Add(file.FileName + " yüklenemedi => " + e.Message.sapString(0,200));
-                }
+                ViewBag.errorList = errorList;
+                return Json("ok");
             }
-            ViewBag.errorList = errorList;
-            return Json("ok");
+            catch (Exception e)
+            {
+                return Json(e.Message);
+            }
         }
 
         public IActionResult ResmiSil(int id)

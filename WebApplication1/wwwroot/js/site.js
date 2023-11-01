@@ -51,7 +51,7 @@ OzAjax.prototype.MultiSend = function () {
         cache: false,
         async: true,
         success: this.CallBackSuccess,
-        error: this.Error,
+        error: this.CallBackError || this.Error,
         xhr: function () {
             var myxhr = $.ajaxSettings.xhr();
             myxhr.upload.addEventListener("progress", function (evt) {
@@ -60,6 +60,12 @@ OzAjax.prototype.MultiSend = function () {
                     that.cllBckFnProcess(percent);
                 }
             }, false);
+
+            //xhr.addEventListener("error", that.CallBackError);
+
+            //myxhr.addEventListener("abort", that.CallBackError);
+            myxhr.onabort = that.CallBackError;
+
             return myxhr;
         }
     });

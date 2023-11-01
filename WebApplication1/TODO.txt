@@ -1,7 +1,6 @@
 ﻿+ Proje 0 ise Etiketleme sayfasında Error yaz..
 + proje silince resimleri de sil..
++ label isimlerinin ve proje isminin label.json içinde türkçe karakter sorunu.
 
 => uploader upload yüzdesi göster.
 	OzAjax.MultiSend() ile göndermeliyim. Şu anda normal form gönderiyor.
-
-- label isimlerinin ve proje isminin label.json içinde türkçe karakter sorunu.

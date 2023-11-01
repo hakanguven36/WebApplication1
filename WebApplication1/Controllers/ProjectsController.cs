@@ -167,8 +167,6 @@ namespace WebApplication1.Controllers
                     labelList_json.Add(label_json);
                 }
 
-
-
                 photo_json.labels = labelList_json;
 
                 photoList_json.Add(photo_json);
@@ -177,13 +175,14 @@ namespace WebApplication1.Controllers
             project_json.photos = photoList_json;
 
             string jsonobj = JsonConvert.SerializeObject(project_json);
+            
             return File(GetByteArray(jsonobj), "text/json", "label.json");
         }
 
         private byte[] GetByteArray(string source)
         {
-            Encoding ascii = Encoding.ASCII;
-            return ascii.GetBytes(source);
+            Encoding enc = Encoding.UTF8;
+            return enc.GetBytes(source);
         }
 
         private string Stringify(object obj)

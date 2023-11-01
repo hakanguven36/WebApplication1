@@ -1,30 +1,37 @@
 ﻿@model IEnumerable<WebApplication1.Models.Project>
 
 <div class="m-2">
-    <h5>Images of Project</h5>
+    
     <hr />
-    <div class="row">
-        <div class="col-md">
-            <form method="post" enctype="multipart/form-data" asp-controller="Uploader" asp-action="Yukleyici">
+    <div style="display:inline-flex ">
+        <b>Images of Project</b>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <form id="uploadForm">
+            <label for="projectID">
 
-                <label class="control-label" for="proje">
-                    Project Name
-                    <select id="project" name="projectID" style="max-width:20em" onchange="ListFiles()">
-                        @foreach (var item in Model)
-                        {
-                            <option value="@item.ID" data-photocount="@item.photos.Count" data-sizeinmb="@item.photos.Sum(u=>u.sizeMB).ToString("0.00")">@item.name</option>
-                        }
-                    </select>
-                </label>
-                &nbsp;&nbsp;&nbsp;&nbsp;
-                <span>
-                    <input type="file" name="postedFiles" multiple accept="image/*" placeholder="hello" title="Select Files" />
-                    <input type="submit" value="Upload" id="submitBtn" disabled />
-                </span>
+                <select id="projectID" name="projectID" style="max-width:20em" onchange="ListFiles()">
+                    @foreach (var item in Model)
+                    {
+                        <option value="@item.ID" data-photocount="@item.photos.Count" data-sizeinmb="@item.photos.Sum(u=>u.sizeMB).ToString("0.00")">@item.name</option>
+                    }
+                </select>
+            </label>
+            &nbsp;&nbsp;&nbsp;&nbsp;
 
+            <input type="file" id="files" name="files" multiple accept="image/*" />
+        </form>
 
-            </form>
+        <button id="submitBtn" class="btn btn-sm btn-secondary" disabled onclick="Upload()">Upload</button>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <div style="min-width:200px; max-height:1em; display:none" id="progressBarContainer">
+            <div class="progress" style="border:1px solid blue">
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="100" style="width:1%"></div>
+            </div>
+            <span id="progressBarInfo" style="color:rgb(0 103 170)">
+                Yükleniyor %45
+            </span>
         </div>
+
     </div>
     <hr />
     <div id="projectInfoDiv"></div>
@@ -40,27 +47,25 @@
     var pageSize = 30;
 
     $(document).ready(function () {
-        
-        if ($("#project").html().trim() == "") {
+        if ($("#projectID").html().trim() == "") {
             OzModal.Info("Proje Yok", "Lütfen bir proje oluşturunuz.", 3000);
             return;
         }
-
         ListFiles();
     });
 
     function ListFiles() {
-        projectID = Number($("#project").val());
+        projectID = Number($("#projectID").val());
 
         if (projectID != 0)
-            $("#submitBtn").removeAttr("disabled");
+            SubmitBtnEnabled();
 
         new OzAjax("/Uploader/ListFilesOfProject", GET, { projectID: projectID, pageNo: pageNo, pageSize: pageSize }, Successful).Send();
         function Successful(data) {
 
             $("#fileListDiv").html(data);
 
-            let photocount = Number($("#project").find(":selected").data("photocount"));
+            let photocount = Number($("#projectID").find(":selected").data("photocount"));
             MakePageButtons(photocount);
 
             ShowProjectInfo();
@@ -68,19 +73,22 @@
     }
     
     function MakePageButtons(photocount) {
-        if (photocount <= pageSize)
-            return;
 
         let pageCount = Math.ceil(photocount / pageSize);
-        
-        for (var i = 1; i < pageCount + 2; i++) {
+
+        if (pageCount == 1)
+            return;
+
+        let buttons = [];
+        for (var i = 0; i < pageCount; i++) {
             let button = $("<button>");
             button.addClass("pageBtn");
-            button.data("pageno", i);
+            button.data("pageno", i+1);
             button.click(GoToPage);
-            button.html(i);
-            $("#pager").append(button.clone(true));
+            button.html(i+1);
+            buttons.push(button.clone(true));
         }
+        $("#pager").html(buttons);
     }
 
     function GoToPage() {
@@ -90,13 +98,73 @@
 
     function ShowProjectInfo() {
         let pinfo = "Total Photo: ";
-        pinfo += $("#project").find(":selected").data("photocount");
+        pinfo += $("#projectID").find(":selected").data("photocount");
         pinfo += " - ";
         pinfo += " Total Size: ";
-        pinfo += $("#project").find(":selected").data("sizeinmb");
+        pinfo += $("#projectID").find(":selected").data("sizeinmb");
         pinfo += " MB ";
         $("#projectInfoDiv").html(pinfo);
     }
+
+    function Upload() {
+
+        SubmitBtnDisabled();
+
+        let formData = new FormData(document.getElementById("uploadForm"));
+
+        new OzAjax("/Uploader/Yukleyici", POST, formData, SendSuccess, SendError, ShowProcess).MultiSend();
+        function SendSuccess(data) {
+            SubmitBtnEnabled();
+
+            data = JSON.parse(data);
+            if (data == "ok") {
+                FinishProgressBar();
+                ListFiles();
+            }
+            else {
+                OzModal.Show("Hata", data);
+                HideProgressBar();
+            }
+            
+        }
+        function SendError(err) {
+            HideProgressBar();
+            OzModal.Show("Hata", err.status);
+        }
+        function ShowProcess(percent) {
+            ShowProgressBar(percent);
+        }
+    }
+
     
+    function SubmitBtnDisabled() {
+        $("#submitBtn").attr("disabled", "disabled");
+    }
+    function SubmitBtnEnabled() {
+        $("#submitBtn").removeAttr("disabled");
+    }
+
+    let progressBarContainer = $("#progressBarContainer");
+    let progressBarInfo = $("#progressBarInfo");
+    let progressBar = $("#progressBar");
+
+
+    function ShowProgressBar(percent) {
+        progressBarContainer.show();
+        progressBar.css({ "width":percent + "%"})
+        progressBarInfo.html("Yükleniyor " + percent + " %");
+    }
+    function FinishProgressBar() {
+        progressBar.css({ "width": "100%" })
+        progressBarInfo.html("Tamamlandı.");
+        setTimeout(HideProgressBar, 2000);
+    }
+
+    function HideProgressBar() {
+        progressBarInfo.html("0 %");
+        progressBar.css({ "width": "0%" })
+        progressBarContainer.hide();
+    }
+
 </script>
 
