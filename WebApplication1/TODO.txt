@@ -2,5 +2,9 @@
 + proje silince resimleri de sil..
 + label isimlerinin ve proje isminin label.json içinde türkçe karakter sorunu.
 
-=> uploader upload yüzdesi göster.
-	OzAjax.MultiSend() ile göndermeliyim. Şu anda normal form gönderiyor.
++ uploader upload yüzdesi göster.
++ uploader rotate270 ekle
+
+- label class text "#EEEEEE" ise görünmüyor.
+
+

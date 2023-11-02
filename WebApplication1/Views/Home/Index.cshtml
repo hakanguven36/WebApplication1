@@ -142,10 +142,6 @@
     <label>
         <input type="number" min="4" max="64" id="circlePoints" value="24" onchange="ChangeCirclePoint()" />
     </label>
-    &nbsp;&nbsp;&nbsp;&nbsp;
-    <label style="border:solid 1px black; border-radius:5px; padding:2px">
-        <svg height="24" id="horizontalBtn" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 640 360" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"><g transform="matrix(.883245 0 0 0.88576 23.01047 35.856693)"><rect width="190" height="280" rx="0" ry="0" transform="matrix(1.173758 0 0 1.127487 33.980972 15.967398)" fill="#ddd" stroke="#555" stroke-width="5" /><path d="M56.493676,199.385659l52.148357-75.525207l48.551918,73.726987-100.700275,1.79822Z" transform="matrix(1.428572 0 0 1.584785-26.009852-76.137794)" fill="#777" stroke="#3f5787" stroke-width="1.28" /><path d="M56.493676,199.385659l52.148357-75.525207l48.551918,73.726987-100.700275,1.79822Z" transform="matrix(.946432 0 0 1.081878 83.047011 24.13465)" fill="#444" stroke="#3f5787" stroke-width="1.28" /><polygon points="0,-18.535619 13.106662,-13.106662 18.535619,0 13.106662,13.106662 0,18.53562 -13.106662,13.106662 -18.535619,0 -13.106662,-13.106662 0,-18.535619" transform="matrix(.019498 0.839772-2.11943 0.04921 105.353648 103.676576)" fill="#eee" stroke-width="0" /><polygon points="0,-18.535619 13.106662,-13.106662 18.535619,0 13.106662,13.106662 0,18.53562 -13.106662,13.106662 -18.535619,0 -13.106662,-13.106662 0,-18.535619" transform="matrix(.019498 0.839772-2.11943 0.04921 192.174045 109.970343)" fill="#eee" /></g><g transform="matrix(0 0.811115-.784397 0 575.246242 119.55704)"><rect width="190" height="280" rx="0" ry="0" transform="matrix(1.173758 0 0 1.127487 35.16079 15.967398)" fill="#ddd" stroke="#000" stroke-width="5" /><path d="M56.493676,199.385659l52.148357-75.525207l48.551918,73.726987-100.700275,1.79822Z" transform="matrix(1.428572 0 0 1.584785-26.009852-76.137794)" fill="#777" stroke="#3f5787" stroke-width="1.28" /><path d="M56.493676,199.385659l52.148357-75.525207l48.551918,73.726987-100.700275,1.79822Z" transform="matrix(.946432 0 0 1.081878 83.047011 24.13465)" fill="#444" stroke="#3f5787" stroke-width="1.28" /><polygon points="0,-18.535619 13.106662,-13.106662 18.535619,0 13.106662,13.106662 0,18.53562 -13.106662,13.106662 -18.535619,0 -13.106662,-13.106662 0,-18.535619" transform="matrix(.019498 0.839772-2.11943 0.04921 105.353648 103.676576)" fill="#eee" stroke-width="0" /><polygon points="0,-18.535619 13.106662,-13.106662 18.535619,0 13.106662,13.106662 0,18.53562 -13.106662,13.106662 -18.535619,0 -13.106662,-13.106662 0,-18.535619" transform="matrix(.019498 0.839772-2.11943 0.04921 192.174045 109.970343)" fill="#eee" stroke-width="0" /></g><line x1="0" y1="-25" x2="0" y2="25" transform="matrix(1 0 0 1.4 450 107)" fill="none" stroke="#000" stroke-width="24" /><line x1="15" y1="15" x2="-15" y2="-15" transform="translate(431 118)" fill="none" stroke="#000" stroke-width="24" /><line x1="-15" y1="15" x2="15" y2="-15" transform="translate(469 118)" fill="none" stroke="#000" stroke-width="24" /><line x1="85" y1="0" x2="-85" y2="0" transform="translate(377 61)" fill="none" stroke="#000" stroke-width="24" /></svg>
-    </label>
 </div>
 
 <div class="mainDiv">
@@ -726,8 +722,6 @@
             let oran = image.width / image.height;
             canvas.width = preferences.csize;
             canvas.height = canvas.width / oran;
-
-
 
             ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.width, canvas.height);
 

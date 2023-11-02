@@ -1,14 +1,24 @@
 ﻿@model IEnumerable<WebApplication1.Models.Project>
 
+<style>
+    .pageBtn{
+        margin-right:0.5em;
+        border-radius:5px;
+    }
+    .pageBtnActive{
+        background-color:gray;
+    }
+</style>
+
 <div class="m-2">
     
     <hr />
     <div style="display:inline-flex ">
         <b>Images of Project</b>
+
         &nbsp;&nbsp;&nbsp;&nbsp;
         <form id="uploadForm">
             <label for="projectID">
-
                 <select id="projectID" name="projectID" style="max-width:20em" onchange="ListFiles()">
                     @foreach (var item in Model)
                     {
@@ -16,11 +26,17 @@
                     }
                 </select>
             </label>
+
             &nbsp;&nbsp;&nbsp;&nbsp;
 
             <input type="file" id="files" name="files" multiple accept="image/*" />
+            <label for="horizonist" title="if image height is longer than image width, image will be rotated. This is supposed help working on horizontal monitors">
+                <input type="checkbox" checked="checked" id="horizonist" name="horizonist" />
+                Rotate 270° if needed
+            </label>
         </form>
 
+        &nbsp;&nbsp;&nbsp;&nbsp;
         <button id="submitBtn" class="btn btn-sm btn-secondary" disabled onclick="Upload()">Upload</button>
         &nbsp;&nbsp;&nbsp;&nbsp;
         <div style="min-width:200px; max-height:1em; display:none" id="progressBarContainer">
@@ -34,11 +50,13 @@
 
     </div>
     <hr />
-    <div id="projectInfoDiv"></div>
+    <div>
+        <span id="projectInfoDiv"></span>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <span id="pager"></span>
+    </div>
     <div id="fileListDiv"></div>
-    <center>
-        <div id="pager"></div>
-    </center>
+
 </div>
 
 <script>
@@ -85,7 +103,9 @@
             button.addClass("pageBtn");
             button.data("pageno", i+1);
             button.click(GoToPage);
-            button.html(i+1);
+            button.html(i + 1);
+            if (i == pageNo - 1)
+                button.addClass("pageBtnActive")
             buttons.push(button.clone(true));
         }
         $("#pager").html(buttons);
@@ -97,10 +117,12 @@
     }
 
     function ShowProjectInfo() {
-        let pinfo = "Total Photo: ";
+        let pinfo = "Showing ";
+        pinfo += pageSize;
+        pinfo += " of Total ";
         pinfo += $("#projectID").find(":selected").data("photocount");
-        pinfo += " - ";
-        pinfo += " Total Size: ";
+        pinfo += " images. - ";
+        pinfo += " Total Size is ";
         pinfo += $("#projectID").find(":selected").data("sizeinmb");
         pinfo += " MB ";
         $("#projectInfoDiv").html(pinfo);

@@ -67,6 +67,8 @@ namespace WebApplication1.Controllers
         {
             try
             {
+                bool horizonist = form["horizonist"].Contains("on");
+
                 var files = form.Files;
 
                 if (files.Count < 1)
@@ -91,6 +93,10 @@ namespace WebApplication1.Controllers
                         {
                             file.CopyTo(stream);
                             Image orjImage = new Bitmap(stream);
+                            
+                            if (horizonist && orjImage.Height > orjImage.Width)
+                                orjImage.RotateFlip(RotateFlipType.Rotate270FlipNone);
+
                             //Image image1024 = ResizeTo1280w(orjImage);
                             orjImage.Save(Path.Combine(rootPath, sysname));
 
@@ -259,6 +265,8 @@ namespace WebApplication1.Controllers
             g.Dispose();
             return (Image)b;
         }
+
+        
 
         private static Image CropImage(Image img, Rectangle cropArea)
         {
