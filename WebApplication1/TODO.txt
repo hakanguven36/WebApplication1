@@ -5,6 +5,8 @@
 + uploader upload yüzdesi göster.
 + uploader rotate270 ekle
 
-- label class text "#EEEEEE" ise görünmüyor.
++ label class text "#EEEEEE" ise görünmüyor.
+
+- undone seçiliyken save yapınca navi'yi güncellemesi lazım.
 
 

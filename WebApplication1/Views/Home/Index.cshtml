@@ -661,20 +661,25 @@
 
     function PaintAnnoBtns() {
         $(".annoBtn").each(function (i, e) {
+            let color = $(e).data("color");
+            let textColor = $(e).data("textcolor");
             if (i == preferences.selectedAnno) {
-                let color = $(e).data("color");
-                let textColor = $(e).data("textcolor");
                 $(e).css({
                     "color": textColor,
                     "background-color": color,
                 });
             }
             else {
-                let color = $(e).data("color");
-                $(e).css({
-                    "color": color,
-                    "background-color": "white"
-                });
+                if (textColor == "#000000")
+                    $(e).css({
+                        "color": "#000000",
+                        "background-color": "white"
+                    });
+                else
+                    $(e).css({
+                        "color": color,
+                        "background-color": "white"
+                    });
             }
         });
     }
@@ -1150,21 +1155,4 @@
     }
 
     // #endregion
-
-
-    // AYRI METOD YAZMALIYIM. UpdateManvas içinde DrawCurrentPolygon() yöntemi çağırılacak.
-    // bu yöntemde Path kapatılmadan çizim yapılacak.
-    // Her noktada 8 piksellik dolu daire ile nokta ifade edilecek.
-    // ilk noktada yine tıklanırsa ve en az 3 nokta var ise ve alan iyiyse labelList'e aktarılabilir.
-    // drawing ve polydrawing ikisinden sadece biri açılabilir.
-
-    /*
-     zoom in zoom out yapınca kayıyor..
-     serverSide içinde orjinal fotoğraf değerlerine çevirerek kaydedelim.
-     getLabelList ile serverdan çekince preferences.sizeFactor'e bölerek çizdirelim.
-
-     AYRICA TÜM JSON ALIŞVERİŞİNİ string İLE YAPALIM ve NEWTONSOFT KULLANALIM...
-     */
-
 </script>
-
