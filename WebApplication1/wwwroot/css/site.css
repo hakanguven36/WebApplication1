@@ -72,7 +72,7 @@ button.accept-policy {
     width: 100%;
     padding: 5px;
     border-bottom: dotted 1px gray;
-    background-color: whitesmoke;
+    background-color: rgb(234 230 212);
     z-index: 3;
 }
 
@@ -130,17 +130,15 @@ button.accept-policy {
 }
 
 .mainDiv {
-    position: absolute;
+    position: fixed;
     top: 84px;
     bottom: 0;
     border-right: solid gray 1px;
-    background-color: yellow;
+    background-color: rgb(234 230 212);
 }
 
-.annoListDiv {
-    position: fixed;
-    width: 120px;
-    border-right: solid gray 1px;
+.annoListDiv {    
+    width: 120px;    
     text-align: center;
 }
 

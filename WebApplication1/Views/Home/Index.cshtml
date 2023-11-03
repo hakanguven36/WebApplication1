@@ -196,6 +196,7 @@
     var image = new Image();
     var selectedLabel = -1;    
     var loading = false;
+    var oldCanvasSize = 1000;
 
     $(document).ready(function () {
         InitPreferences();
@@ -239,6 +240,7 @@
     function UpdateCSize() {
         let csize = preferences.csize;
         $("#csize").html(csize + "px");
+        oldCanvasSize = csize;
     }
     function UpdateCrossHair() {
         if (preferences.crossHair)
@@ -418,8 +420,7 @@
                 preferences.csize = 50;
         }
 
-        SavePreferences();
-        UpdateCSize();
+        SavePreferences();        
         UpdateCanvas();
 
         let sizeFactor = image.width / preferences.csize;
@@ -427,6 +428,28 @@
 
         ResizeLabelList(alpha);
         UpdateManvas();
+
+
+        let rate = preferences.csize / oldCanvasSize;
+
+        
+
+        let deltaLeft = mouse.x * rate * increase;
+        let deltaTop = mouse.y * rate * increase;
+
+        console.log(deltaLeft);
+
+        let currentLeft = $("#canvas").position().left;
+        let currentTop = $("#canvas").position().top;
+
+
+
+        canvas.style.top = (currentTop + deltaTop) + "px";
+        canvas.style.left = (currentLeft + deltaLeft) + "px";
+        
+        oldCanvasSize = preferences.csize;
+        UpdateCSize();
+
     }
 
     function ClickCrossHair() {
@@ -680,6 +703,10 @@
                 break;
 
         }
+    });
+
+    manvas.addEventListener("wheel", function (e) {
+        ChangeCSize(e.deltaY < 0);
     });
 
 
