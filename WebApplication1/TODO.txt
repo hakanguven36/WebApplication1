@@ -14,3 +14,21 @@ Advanced
 - mouse ile zoom in zoom out yapılabilir. 
 	Bunun için index page yüksekliği sabitlenip kaydırma çubuğu yok edilir. 
 	canvas.addEventListener ile tekerlek dinlenerek bu işlem yapılabilir.
+
+
+
+
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <system.webServer>
+    <!-- Removed other configuration -->
+    <security>
+      <requestFiltering>
+       <!-- 256MB = 268,435,456  Bytes -->
+        <requestLimits maxAllowedContentLength="268435456"/>
+      </requestFiltering>
+    </security>
+  </system.webServer>
+</configuration>

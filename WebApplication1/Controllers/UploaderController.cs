@@ -95,7 +95,8 @@ namespace WebApplication1.Controllers
                             //Image image1024 = ResizeTo1280w(orjImage);
                             orjImage.Save(Path.Combine(rootPath, sysname));
                             
-                            Image thumb = ResizeImage(orjImage, new Size(200, 200));
+                            //Image thumb = ResizeImage(orjImage, new Size(100,100));
+                            Image thumb = orjImage.GetThumbnailImage(100, 100, null, IntPtr.Zero);
                             thumb.Save(Path.Combine(rootPath, "thumbs", sysname));
                         }
 

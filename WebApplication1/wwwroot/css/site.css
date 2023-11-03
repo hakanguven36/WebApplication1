@@ -131,15 +131,19 @@ button.accept-policy {
 
 .mainDiv {
     position: fixed;
-    top: 84px;
+    top: 76px;
     bottom: 0;
     border-right: solid gray 1px;
     background-color: rgb(234 230 212);
 }
 
-.annoListDiv {    
-    width: 120px;    
+.annoListDiv {
+    position: fixed;
+    width: 120px;
+    height:100%;
     text-align: center;
+    z-index: 3;
+    background-color: rgb(234 230 212);
 }
 
 .annoBtn {

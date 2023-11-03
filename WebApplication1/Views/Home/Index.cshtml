@@ -83,6 +83,14 @@
             this.y = y;
         }
     }
+    class Plane {
+        constructor(w, h) {
+            this.w = w;
+            this.h = h;
+        }
+    }
+    
+
     class Rectangle {
         #width;
         #height;
@@ -177,12 +185,14 @@
 
     var preferences = new Preferences();
     var navi = new NavigateViewModel();
+    var oldCanvasPlane = new Plane();
     var labelList = [];
     var currentLabel = new Label();
     const mouse = new Point();
     var rect = new Rectangle();
     var circle = new Circle();
     var polygon = new Polygon();
+
     // #endregion
 
     var projectList = [];
@@ -196,7 +206,10 @@
     var image = new Image();
     var selectedLabel = -1;    
     var loading = false;
-    var oldCanvasSize = 1000;
+    var pullingTheWorld = false;
+    var selected_BBox = new Rectangle();
+
+    
 
     $(document).ready(function () {
         InitPreferences();
@@ -240,7 +253,7 @@
     function UpdateCSize() {
         let csize = preferences.csize;
         $("#csize").html(csize + "px");
-        oldCanvasSize = csize;
+        oldCanvasPlane = new Plane(canvas.width, canvas.height);
     }
     function UpdateCrossHair() {
         if (preferences.crossHair)
@@ -429,27 +442,15 @@
         ResizeLabelList(alpha);
         UpdateManvas();
 
+        let expansion = new Plane(oldCanvasPlane.w - canvas.width, oldCanvasPlane.h - canvas.height);
 
-        let rate = preferences.csize / oldCanvasSize;
+        let movePlane = new Plane();
+        movePlane.w = expansion.w * (mouse.x / oldCanvasPlane.w);
+        movePlane.h = expansion.h * (mouse.y / oldCanvasPlane.h);
+        MoveTheWorld(movePlane);
 
-        
-
-        let deltaLeft = mouse.x * rate * increase;
-        let deltaTop = mouse.y * rate * increase;
-
-        console.log(deltaLeft);
-
-        let currentLeft = $("#canvas").position().left;
-        let currentTop = $("#canvas").position().top;
-
-
-
-        canvas.style.top = (currentTop + deltaTop) + "px";
-        canvas.style.left = (currentLeft + deltaLeft) + "px";
-        
-        oldCanvasSize = preferences.csize;
+        oldCanvasPlane = new Plane(canvas.width, canvas.height);
         UpdateCSize();
-
     }
 
     function ClickCrossHair() {
@@ -647,7 +648,9 @@
 
     function UpdateCanvas() {
         if (image.width > 0) {
-            
+
+            oldCanvasPlane = new Plane(canvas.width, canvas.height);
+
             let oran = image.width / image.height;
             canvas.width = preferences.csize;
             canvas.height = canvas.width / oran;
@@ -684,7 +687,7 @@
     var pulling = false;
     
     //// TRIGERS ////
-    manvas.addEventListener("contextmenu", function (e) {
+    document.addEventListener("contextmenu", function (e) {
         e.preventDefault();
     });
 
@@ -706,6 +709,8 @@
     });
 
     manvas.addEventListener("wheel", function (e) {
+        mouse.x = e.offsetX;
+        mouse.y = e.offsetY;
         ChangeCSize(e.deltaY < 0);
     });
 
@@ -716,6 +721,7 @@
 
     manvas.addEventListener("mouseleave", function (e) {
         mouseEntered = false;
+        pulling = false;
         UpdateManvas();
     });
 
@@ -757,6 +763,7 @@
                 }
                 break;
             case 1:
+                pullingTheWorld = true;
                 break;
             case 2:
                 if (polygon.points.length > 0) {
@@ -781,11 +788,13 @@
                     case 1:
                     case 2:
                         drawing = false;
+
                         if (currentLabel.points.length == 1)
-                            break;                            
-                        let bboxArea = BBoxAreaCalculator(currentLabel.points);
-                        if (bboxArea > 16)
+                            break;
+
+                        if (BBoxAreaCalculator(currentLabel.points) > 16)
                             labelList.push(currentLabel);
+
                         ClearCurrentLabel();
                         break;
                     case 3:
@@ -793,16 +802,27 @@
                 }
                 break;
             case 1:
+                pullingTheWorld = false;
                 break;
             case 2:
                 pulling = false;
                 break;
         }
     });
+    document.addEventListener("mouseup", function (e) {
+        if (e.button == 1)
+            pullingTheWorld = false;
+    })
 
     manvas.addEventListener("mousemove", function (e) {
         mouse.x = e.offsetX;
         mouse.y = e.offsetY;
+
+        if (pullingTheWorld) {
+            MoveTheWorld(new Plane(e.movementX, e.movementY));
+            return;
+        }
+
         switch (preferences.shape) {
             case 0:
                 if (drawing) {
@@ -1021,15 +1041,23 @@
         selectedLabel = -1;
         for (var j = 0; j < labelList.length; j++) {
             let label = labelList[j];
-            if (Collision(label.points, mouse.x, mouse.y))
+            if (Collision(label.points, mouse.x, mouse.y)) {
                 selectedLabel = j;
+                selected_BBox = BBox(labelList[selectedLabel].points);
+            }
         }
     }
 
-    function MoveLabel(movementX, movementY) {
+    function MoveLabel(movementX, movementY) {        
+
+        selected_BBox = BBox(labelList[selectedLabel].points);
+
         for (var i = 0; i < labelList[selectedLabel].points.length; i++) {
-            labelList[selectedLabel].points[i].x += movementX;
-            labelList[selectedLabel].points[i].y += movementY;
+
+            if (selected_BBox.beginX + movementX > 0 && selected_BBox.endX + movementX < canvas.width)
+                labelList[selectedLabel].points[i].x += movementX;
+            if (selected_BBox.beginY + movementY > 0 && selected_BBox.endY + movementY < canvas.height)
+                labelList[selectedLabel].points[i].y += movementY;
         }
     }
 
@@ -1054,22 +1082,29 @@
         }
         return collision;
     }
-    
-    function BBoxAreaCalculator(points) {
-        let boundingMin = new Point(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
-        let boundingMax = new Point(0, 0);
+
+    function BBox(points) {
+        let bb = new Rectangle();
+        bb.beginX = bb.beginY = Number.MAX_SAFE_INTEGER;
+        bb.endX = bb.endY = 0;
+
         for (var i = 0; i < points.length; i++) {
             let point = points[i];
-            if (point.x < boundingMin.x)
-                boundingMin.x = point.x;
-            if (point.x > boundingMax.x)
-                boundingMax.x = point.x;
-            if (point.y < boundingMin.y)
-                boundingMin.y = point.y;
-            if (point.y > boundingMax.y)
-                boundingMax.y = point.y;
+            if (point.x < bb.beginX)
+                bb.beginX = point.x;
+            if (point.x > bb.endX)
+                bb.endX = point.x;
+            if (point.y < bb.beginY)
+                bb.beginY = point.y;
+            if (point.y > bb.endY)
+                bb.endY = point.y;
         }
-        return (boundingMax.x - boundingMin.x) * (boundingMax.y - boundingMin.y);
+        return bb;
+    }
+
+    function BBoxAreaCalculator(points) {
+        let bb = BBox(points);
+        return (bb.endX - bb.beginX) * (bb.endY - bb.beginY);
     }
 
     function ClearAllLabels() {
@@ -1077,10 +1112,21 @@
         UpdateManvas();
     }
 
-    function Goster() {
-        console.log("labelList.length: ", labelList.length);
-        console.log("polygon.points.length: ", polygon.points.length);
+    // #endregion
+
+    // #region World Coordinat Functions
+
+    function MoveTheWorld(plane) {
+        let currentLeft = $("#canvas").position().left;
+        let currentTop = $("#canvas").position().top;
+
+        canvas.style.top = Math.floor(currentTop + plane.h) + "px";
+        canvas.style.left = Math.floor(currentLeft + plane.w) + "px";
+
+        manvas.style.top = Math.floor(currentTop + plane.h) + "px";
+        manvas.style.left = Math.floor(currentLeft + plane.w) + "px";
     }
 
     // #endregion
+
 </script>

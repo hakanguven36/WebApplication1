@@ -10,11 +10,10 @@
     }
 </style>
 
-<div class="m-2">
+<div class="container-lg" style="margin-top:60px">
     
-    <hr />
     <div style="display:inline-flex ">
-        <b>Images of Project</b>
+        <b>Project Name: </b>
 
         &nbsp;&nbsp;&nbsp;&nbsp;
         <form id="uploadForm">
@@ -136,6 +135,7 @@
             data = JSON.parse(data);
             if (data == "ok") {
                 FinishProgressBar();
+                ShowProjectInfo();
                 ListFiles();
             }
             else {
