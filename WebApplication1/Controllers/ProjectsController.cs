@@ -142,7 +142,7 @@ namespace WebApplication1.Controllers
             foreach (Photo photo in project.photos)
             {
                 ModelJson.Photo photo_json = new ModelJson.Photo();
-                photo_json.path = photo.orjname;
+                photo_json.path = photo.sysname;
 
                 List<ModelJson.Label> labelList_json = new List<ModelJson.Label>();
                 // 1) string'i normal label'a çevir

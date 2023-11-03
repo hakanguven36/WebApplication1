@@ -57,3 +57,122 @@ button.accept-policy {
 
 /* Sticky footer styles
 -------------------------------------------------- */
+
+.blackBar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: rgb(50,50,50);
+    z-index: 2;
+}
+
+.navigationPanel {
+    position: fixed;
+    top: 28px;
+    width: 100%;
+    padding: 5px;
+    border-bottom: dotted 1px gray;
+    background-color: whitesmoke;
+    z-index: 3;
+}
+
+.btnNavi {
+    border-radius: 3px 4px;
+}
+
+.naviScreen {
+    cursor: pointer;
+}
+
+.naviScreenContainer {
+    display: inline-block;
+    width: 40px;
+    text-align: center;
+}
+
+.naviInput {
+    position: absolute;
+    width: 40px;
+    border-radius: 5px;
+    z-index: 3;
+}
+
+.spnShape {
+    background-color: white;
+    cursor: pointer;
+    padding: 4px;
+    height: 28px;
+}
+
+    .spnShape:hover {
+        background-color: rgb(180,180,180);
+    }
+
+.spnShapeSelected {
+    background-color: rgb(180,180,180);
+}
+
+.selectedSVG {
+    background-color: rgb(180,180,180);
+}
+
+.sizeBtn {
+    border: none;
+    padding-right: 4px;
+    padding-left: 4px;
+    cursor: pointer;
+}
+
+.sizeBtnBorder {
+    text-align: center;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+.mainDiv {
+    position: absolute;
+    top: 84px;
+    bottom: 0;
+    border-right: solid gray 1px;
+    background-color: yellow;
+}
+
+.annoListDiv {
+    position: fixed;
+    width: 120px;
+    border-right: solid gray 1px;
+    text-align: center;
+}
+
+.annoBtn {
+    width: 80%;
+    border: solid 1px;
+    border-radius: 5px;
+    margin-top: 0.4em;
+    margin-bottom: 0.4em;
+}
+
+.canvasDiv {
+    position: absolute;
+    top: 0px;
+    left: 120px;
+    min-height: 200vh;
+}
+
+#canvas {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+
+#manvas {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+
+#circlePoints {
+    width: 3em;
+}
+
+

@@ -1,12 +1,16 @@
 ﻿+ Proje 0 ise Etiketleme sayfasında Error yaz..
 + proje silince resimleri de sil..
 + label isimlerinin ve proje isminin label.json içinde türkçe karakter sorunu.
-
 + uploader upload yüzdesi göster.
-+ uploader rotate270 ekle
-
 + label class text "#EEEEEE" ise görünmüyor.
++ undone seçiliyken save yapınca navi'yi güncellemesi lazım.
++ label.json üretirken orjname yerine sysname ile kaydet.
 
-- undone seçiliyken save yapınca navi'yi güncellemesi lazım.
 
 
+
+Advanced
+- Upload sırasında jpeg kayıpsız döndürme yapılabilir. cs veya js içinde..
+- mouse ile zoom in zoom out yapılabilir. 
+	Bunun için index page yüksekliği sabitlenip kaydırma çubuğu yok edilir. 
+	canvas.addEventListener ile tekerlek dinlenerek bu işlem yapılabilir.
